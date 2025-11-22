@@ -1,0 +1,10 @@
+[
+  {
+    "id": 1,
+    "title": "仓鼠的白日梦",
+    "artist": "Deepseek/豆包",
+    "cover": "https://placehold.co/300",
+    "url": "path/to/song.mp3",
+    "duration": "3:45"
+  }
+]

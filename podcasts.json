@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "title": "Episode Title",
+    "host": "Host Name",
+    "description": "Brief description...",
+    "cover": "https://placehold.co/300",
+    "url": "path/to/podcast.mp3",
+    "date": "Oct 24, 2023"
+  }
+]
