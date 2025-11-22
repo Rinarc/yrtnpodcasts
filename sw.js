@@ -4,7 +4,7 @@ const ASSETS_TO_CACHE = [
   './index.html',
   './music.json',
   './podcasts.json',
-  './icon.png'
+  './knockout.jpeg'
 ];
 
 // 1. Install Service Worker and Cache Static Assets
