@@ -1,0 +1,55 @@
+{
+  "paperName": "YHD系统测试卷",
+  "timeLimit": 15,
+  "notice": "考生请注意：本套试卷包含单选题、多选题和填空题。考试开始后自动播放听力全文，请认真听并作答。考试时间15分钟，时间到自动交卷。",
+  "noticeAudioUrl": "https://www.qmpan.com/f/4DL1UE/%E8%80%83%E5%89%8D%E9%A1%BB%E7%9F%A5.mp3",
+  "examAudioUrl": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+  "questions": [
+    {
+      "type": "single_choice",
+      "stem": "本题请选择B项",
+      "options": ["图书馆", "邮局", "医院", "学校"],
+      "correct": 1
+    },
+    {
+      "type": "multiple_choice",
+      "stem": "本题请选择AB项",
+      "options": ["雨伞", "雨衣", "太阳镜", "地图"],
+      "correct": [0, 1]
+    },
+    {
+      "type": "fill_blank",
+      "stem": "航班延误的原因是______。（本题请填写大雾",
+      "correct": "大雾"
+    },
+    {
+      "type": "single_choice",
+      "stem": "本题请选择B项",
+      "options": ["买课本", "在线课程", "去法国", "找语伴"],
+      "correct": 1
+    },
+    {
+      "type": "multiple_choice",
+      "stem": "本题请选ABC",
+      "options": ["垃圾分类", "节约用水", "少开车", "多种树"],
+      "correct": [0, 1, 2]
+    },
+    {
+      "type": "fill_blank",
+      "stem": "本题请填写1998",
+      "correct": "1998"
+    },
+    {
+      "type": "single_choice",
+      "stem": "本题请选C项",
+      "options": ["中餐厅", "意大利餐厅", "日本料理", "快餐店"],
+      "correct": 2
+    },
+    {
+      "type": "multiple_choice",
+      "stem": "本题请选择ABCD",
+      "options": ["五险一金", "免费午餐", "年度旅游", "股票期权"],
+      "correct": [0, 1, 2, 3]
+    }
+  ]
+}

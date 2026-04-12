@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "YHD系统测试卷",
+    "description": "测试基本功能，请测试员认真进行",
+    "dataFile": "paper-demo.json",
+    "visibleTo": ["039","034"]
+  },
+  {
+    "id": 2,
+    "name": "雅思听力真题模拟 B",
+    "description": "仅对 student2 可见",
+    "dataFile": "paper-ielts.json",
+    "visibleTo": ["student2"]
+  },
+  {
+    "id": 3,
+    "name": "公开模拟卷 C",
+    "description": "所有考生可见",
+    "dataFile": "paper-public.json",
+    "visibleTo": ["*"]
+  }
+]
