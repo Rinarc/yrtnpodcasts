@@ -1,0 +1,116 @@
+{
+  "paperName": "Listening 12",
+  "timeLimit": 15,
+  "notice": "考生请注意：本套试卷包含单选题、多选题和填空题。考试开始后自动播放听力全文，请认真听并作答。考试时间15分钟，时间到自动交卷。",
+  "noticeAudioUrl": "https://www.qmpan.com/f/4DL1UE/%E8%80%83%E5%89%8D%E9%A1%BB%E7%9F%A5.mp3",
+  "examAudioUrl": "https://www.qmpan.com/f/weqxUQ/Listening%2012.mp3",
+  "questions": [
+    {
+      "type": "single_choice",
+      "stem": "第一篇听力答案请填写2-11题，第二篇听力答案请填写12-16题",
+      "options": ["明白了","不明白"],
+      "correct": 0
+    },
+   {
+      "type": "single_choice",
+      "stem": "What is the main topic of the first paragraph?",
+      "options": ["Dangers for blind people.","How digital technology helps disabled people, with the example of a smart walking stick.","The cost of new technology.","Public transportation timetables."
+      ],
+      "correct": 1
+    },
+    {
+      "type": "single_choice",
+      "stem": "What specific functions does the smart walking stick for the blind have? (Choose the most complete answer)",
+      "options": [
+        "It can only detect objects.",
+        "It can warn of danger, give directions, and provide bus/train schedules.",
+        "It can make phone calls.",
+        "It can read books aloud."
+      ],
+      "correct": 1
+    },
+    {
+      "type": "single_choice",
+      "stem": "What was the situation in India according to a 2022 report mentioned in the second paragraph?",
+      "options": [
+        "Over 22% of the population had no internet.",
+        "Over 22% of the population couldn't read or write.",
+        "Rural schools had no buildings.",
+        "New Delhi had too many students."
+      ],
+      "correct": 1
+    },
+    {
+      "type": "single_choice",
+      "stem": "How did digital technology help solve the problem mentioned in the second paragraph?",
+      "options": [
+        "By sending all students to New Delhi.",
+        "By providing rural schools with a powerful internet connection for online lessons.",
+        "By building new libraries.",
+        "By training more teachers in villages."
+      ],
+      "correct": 1
+    },
+    {
+      "type": "single_choice",
+      "stem": "According to the third paragraph, what is one primary ability of firefighting robots?",
+      "options": [
+        "They can put out fires with water.",
+        "They can walk, run, climb, and communicate with trapped people.",
+        "They can drive fire trucks.",
+        "They can perform medical surgery."
+      ],
+      "correct": 1
+    },
+    {
+      "type": "fill_blank",
+      "stem": "The smart walking stick can warn its owner of the ______ when an object is detected. (Paragraph 1)",
+      "correct": "danger"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "The technology is believed to make the lives of blind people safer and ______. (Paragraph 1)",
+      "correct": "easier"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "Digital technology gives students the same chance to learn, no matter where they ______. (Paragraph 2)",
+      "correct": "live"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "While moving, firefighting robots send ______ information to the control unit. (Paragraph 3)",
+      "correct": "video"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "With the video from robots, firefighters can see the fire environment clearly and then make a safe ______. (Paragraph 3)",
+      "correct": "plan"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "The astronauts worked for about 5.5 ______.",
+      "correct": "hours"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "Zhang Lu and Wu Fei returned to the Wentian ______ module.",
+      "correct": "lab"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "Zhang Lu has done 7 spacewalks, a new ______ for China.",
+      "correct": "record"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "The crew's stay in space will be longer by about one ______.",
+      "correct": "month"
+    },
+    {
+      "type": "fill_blank",
+      "stem": "The astronauts do many ______ in space, like life science.",
+      "correct": "experiments"
+    }
+  ]
+}
