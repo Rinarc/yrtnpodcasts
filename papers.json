@@ -8,10 +8,10 @@
   },
   {
     "id": 2,
-    "name": "雅思听力真题模拟 B",
-    "description": "仅对 student2 可见",
-    "dataFile": "paper-ielts.json",
-    "visibleTo": ["student2"]
+    "name": "Listening 12",
+    "description": "听力模拟-12「较难」",
+    "dataFile": "paper-listening12.json",
+    "visibleTo": ["034""039""041"]
   },
   {
     "id": 3,
