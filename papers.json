@@ -11,7 +11,7 @@
     "name": "Listening 12",
     "description": "听力模拟-12「较难」",
     "dataFile": "paper-listening12.json",
-    "visibleTo": ["034""039""041"]
+    "visibleTo": ["034","039","041"]
   },
   {
     "id": 3,
