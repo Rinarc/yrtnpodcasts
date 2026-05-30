@@ -96,7 +96,7 @@
         <div id="userInfoPanel" class="user-info" style="display:none;"><div id="userAvatar" class="user-avatar"></div><span id="userFullName" class="user-name"></span></div>
     </div>
     <div class="content">
-        <div id="loginView" class="view active-view"><div class="card"><div class="section-title">考生登录</div><div class="input-group"><label>账号</label><input type="text" id="username" placeholder="请输入账号"></div><div class="input-group"><label>密码</label><input type="password" id="password" placeholder="请输入密码"></div><button id="loginBtn" class="btn btn-primary">登录系统</button><div id="loginError" class="error-msg"></div><div class="info-note">账号密码：考生姓名首字母大写 / 000 </div></div></div>
+        <div id="loginView" class="view active-view"><div class="card"><div class="section-title">考生登录</div><div class="input-group"><label>账号</label><input type="text" id="username" placeholder="请输入账号"></div><div class="input-group"><label>密码</label><input type="password" id="password" placeholder="请输入密码"></div><button id="loginBtn" class="btn btn-primary">登录系统</button><div id="loginError" class="error-msg"></div><div class="info-note">账号密码：姓名首字母大写 / 000 </div></div></div>
         <div id="paperSelectView" class="view"><div class="card"><div class="section-title">请选择考试试卷</div><div id="papersContainer" class="papers-grid">加载中...</div></div></div>
         <div id="guideView" class="view"><div class="card"><div class="section-title">考试注意事项</div><div id="noticeTextArea" style="background:#f8fafc; padding:18px; border:1px solid #e2e8f0; margin-bottom:24px; line-height:1.6;"></div><div style="display:flex; justify-content:flex-end;"><button id="skipNoticeBtn" class="btn btn-primary">知晓并跳过</button></div></div></div>
         <div id="loadingView" class="view"><div class="card loading-box"><div id="loadingMessage">正在下载试卷资源...</div><div id="countdownDisplay" style="font-size:2rem; font-weight:bold; margin-top:16px;">--</div></div></div>
@@ -238,7 +238,7 @@
         }, 1000);
     }
 
-    // 关键修复：动态生成选项字母，支持任意数量
+    // ---------- 关键修复：使用闭包捕获当前索引，避免索引错误 ----------
     function renderExamSections() {
         examContentArea.innerHTML = '';
         let globalQIndex = 0;
@@ -270,17 +270,22 @@
                 const answerArea = document.createElement('div');
                 answerArea.className = 'options';
 
+                // 保存当前题目的索引到局部变量，供事件回调使用
+                const currentIndex = globalQIndex;
+
                 if (q.type === 'single_choice') {
                     q.options.forEach((opt, idx) => {
-                        const letter = String.fromCharCode(65 + idx); // A, B, C, D, E, F...
+                        const letter = String.fromCharCode(65 + idx);
                         const optDiv = document.createElement('div');
                         optDiv.className = 'option';
                         const radio = document.createElement('input');
                         radio.type = 'radio';
-                        radio.name = `q_${globalQIndex}`;
+                        radio.name = `q_${currentIndex}`;
                         radio.value = idx;
-                        if (userAnswers[globalQIndex] === idx) radio.checked = true;
-                        radio.addEventListener('change', () => { userAnswers[globalQIndex] = idx; });
+                        if (userAnswers[currentIndex] === idx) radio.checked = true;
+                        radio.addEventListener('change', () => {
+                            userAnswers[currentIndex] = idx;
+                        });
                         const label = document.createElement('label');
                         label.innerText = letter;
                         optDiv.appendChild(radio);
@@ -295,14 +300,17 @@
                         const cb = document.createElement('input');
                         cb.type = 'checkbox';
                         cb.value = idx;
-                        let currentVal = userAnswers[globalQIndex] || [];
+                        let currentVal = userAnswers[currentIndex] || [];
                         if (Array.isArray(currentVal) && currentVal.includes(idx)) cb.checked = true;
                         cb.addEventListener('change', (e) => {
-                            let selected = userAnswers[globalQIndex] || [];
+                            let selected = userAnswers[currentIndex] || [];
                             if (!Array.isArray(selected)) selected = [];
-                            if (e.target.checked) { if (!selected.includes(idx)) selected.push(idx); }
-                            else { selected = selected.filter(v => v !== idx); }
-                            userAnswers[globalQIndex] = selected;
+                            if (e.target.checked) {
+                                if (!selected.includes(idx)) selected.push(idx);
+                            } else {
+                                selected = selected.filter(v => v !== idx);
+                            }
+                            userAnswers[currentIndex] = selected;
                         });
                         const label = document.createElement('label');
                         label.innerText = letter;
@@ -316,10 +324,12 @@
                         optDiv.className = 'option';
                         const radio = document.createElement('input');
                         radio.type = 'radio';
-                        radio.name = `q_${globalQIndex}`;
+                        radio.name = `q_${currentIndex}`;
                         radio.value = val;
-                        if (userAnswers[globalQIndex] === val) radio.checked = true;
-                        radio.addEventListener('change', () => { userAnswers[globalQIndex] = val; });
+                        if (userAnswers[currentIndex] === val) radio.checked = true;
+                        radio.addEventListener('change', () => {
+                            userAnswers[currentIndex] = val;
+                        });
                         const label = document.createElement('label');
                         label.innerText = val === 'T' ? 'True' : 'False';
                         optDiv.appendChild(radio);
@@ -331,8 +341,10 @@
                     input.type = 'text';
                     input.className = 'fill-input';
                     input.placeholder = '请输入答案';
-                    if (userAnswers[globalQIndex] && typeof userAnswers[globalQIndex] === 'string') input.value = userAnswers[globalQIndex];
-                    input.addEventListener('input', (e) => { userAnswers[globalQIndex] = e.target.value.trim(); });
+                    if (userAnswers[currentIndex] && typeof userAnswers[currentIndex] === 'string') input.value = userAnswers[currentIndex];
+                    input.addEventListener('input', (e) => {
+                        userAnswers[currentIndex] = e.target.value.trim();
+                    });
                     answerArea.appendChild(input);
                 } else if (q.type === 'fill_blanks') {
                     const blanks = q.blanks || [];
@@ -345,11 +357,11 @@
                         input.type = 'text';
                         input.className = 'fill-input';
                         input.style.width = '250px';
-                        let currentVal = (userAnswers[globalQIndex] && userAnswers[globalQIndex][blankIdx]) || '';
+                        let currentVal = (userAnswers[currentIndex] && userAnswers[currentIndex][blankIdx]) || '';
                         input.value = currentVal;
                         input.addEventListener('input', (e) => {
-                            if (!userAnswers[globalQIndex]) userAnswers[globalQIndex] = [];
-                            userAnswers[globalQIndex][blankIdx] = e.target.value.trim();
+                            if (!userAnswers[currentIndex]) userAnswers[currentIndex] = [];
+                            userAnswers[currentIndex][blankIdx] = e.target.value.trim();
                         });
                         group.appendChild(label);
                         group.appendChild(input);
