@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>YHD英语听力模拟考试系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "楷体", "KaiTi", "华文楷书", "STKaiti", serif;
+            background: #d6dbe3;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .exam-container {
+            max-width: 1300px;
+            width: 100%;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: #1e2a3e;
+            padding: 12px 28px;
+            border-bottom: 3px solid #8b2c1d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .title-area h1 { color: #f0f3f8; font-size: 1.5rem; }
+        .title-area p { color: #9aaec2; font-size: 0.75rem; }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #2a3a4e;
+            padding: 6px 16px;
+            border-radius: 40px;
+        }
+        .user-avatar { width: 40px; height: 40px; border-radius: 4px; background: #5a6e85; overflow: hidden; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-name { color: #ecf0f1; font-weight: 500; }
+        .content { padding: 28px 32px; background: #fefefe; }
+        .view { display: none; }
+        .active-view { display: block; }
+        .card { background: #fff; border: 1px solid #dce3ec; padding: 24px 28px; border-radius: 4px; }
+        .section-title { font-size: 1.4rem; font-weight: 600; color: #1e2a3e; border-left: 4px solid #8b2c1d; padding-left: 14px; margin-bottom: 24px; }
+        .input-group { margin-bottom: 22px; }
+        .input-group input { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit; }
+        .btn { background: #2c3e50; color: white; border: none; padding: 10px 24px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+        .btn-primary { background: #8b2c1d; }
+        .btn-primary:hover { background: #6e2216; }
+        .papers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
+        .paper-card { border: 1px solid #e2e8f0; padding: 18px; cursor: pointer; }
+        .paper-card:hover { border-color: #8b2c1d; background: #fefaf9; }
+        .timer-area { background: #f2f4f8; padding: 10px 18px; display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .timer-box { font-family: monospace; font-size: 1.8rem; background: #1e2a3e; color: #f5c542; padding: 4px 16px; }
+        .pretest-area {
+            background: #fef9e6;
+            border: 2px solid #b57c1c;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .pretest-area p { font-size: 1.4rem; color: #8b2c1d; margin-bottom: 20px; }
+        .pretest-timer { font-size: 2.5rem; font-weight: bold; font-family: monospace; }
+        .audio-status { margin-top: 15px; font-size: 0.9rem; color: #2c6e2c; }
+        .section-block { margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
+        .section-image { max-width: 100%; margin: 15px 0; border: 1px solid #ddd; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .section-header { font-size: 1.3rem; font-weight: bold; background: #f1f5f9; padding: 8px 15px; margin: 10px 0; border-left: 5px solid #8b2c1d; }
+        .question-item { border: 1px solid #e9edf2; margin-bottom: 20px; padding: 15px 20px; background: #fefefe; }
+        .q-num { font-weight: 700; margin-bottom: 10px; color: #2c3e50; }
+        .options { display: flex; flex-direction: column; gap: 8px; margin-left: 20px; }
+        .option { display: flex; align-items: center; gap: 12px; line-height: 1.4; }
+        .fill-input { padding: 6px 10px; width: 250px; border: 1px solid #cbd5e1; border-radius: 4px; margin-right: 10px; margin-bottom: 8px; font-family: inherit; }
+        .fill-group { margin: 8px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .action-buttons { display: flex; justify-content: flex-end; gap: 18px; margin-top: 32px; }
+        .error-msg { color: #c0392b; margin-top: 10px; }
+        .info-note { background: #f8f4e8; padding: 14px; border-left: 3px solid #b57c1c; margin-bottom: 20px; }
+        .loading-box { text-align: center; padding: 40px; }
+        .overlay-message { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; flex-direction:column; gap:20px; color:white; z-index:1000; font-family: inherit; }
+        .answer-summary { background: #f8fafc; padding: 20px; border-radius: 8px; max-height: 500px; overflow: auto; }
+        .summary-item { margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+    </style>
+</head>
+<body>
+<div class="exam-container">
+    <div class="header">
+        <div class="title-area"><h1>YHD英语听力模拟考试系统</h1><p>严肃考纪 · 真实流程</p></div>
+        <div id="userInfoPanel" class="user-info" style="display:none;"><div id="userAvatar" class="user-avatar"></div><span id="userFullName" class="user-name"></span></div>
+    </div>
+    <div class="content">
+        <div id="loginView" class="view active-view"><div class="card"><div class="section-title">考生登录</div><div class="input-group"><label>账号</label><input type="text" id="username" placeholder="请输入账号"></div><div class="input-group"><label>密码</label><input type="password" id="password" placeholder="请输入密码"></div><button id="loginBtn" class="btn btn-primary">登录系统</button><div id="loginError" class="error-msg"></div><div class="info-note">账号密码：考生姓名首字母大写 / 000 </div></div></div>
+        <div id="paperSelectView" class="view"><div class="card"><div class="section-title">请选择考试试卷</div><div id="papersContainer" class="papers-grid">加载中...</div></div></div>
+        <div id="guideView" class="view"><div class="card"><div class="section-title">考试注意事项</div><div id="noticeTextArea" style="background:#f8fafc; padding:18px; border:1px solid #e2e8f0; margin-bottom:24px; line-height:1.6;"></div><div style="display:flex; justify-content:flex-end;"><button id="skipNoticeBtn" class="btn btn-primary">知晓并跳过</button></div></div></div>
+        <div id="loadingView" class="view"><div class="card loading-box"><div id="loadingMessage">正在下载试卷资源...</div><div id="countdownDisplay" style="font-size:2rem; font-weight:bold; margin-top:16px;">--</div></div></div>
+        <div id="examView" class="view"><div class="card">
+            <div class="timer-area"><span>考试剩余时间</span><span id="timerDisplay" class="timer-box">00:00</span></div>
+            <div id="examContentArea"></div>
+            <div class="action-buttons"><button id="submitExamBtn" class="btn btn-primary">提交试卷</button></div>
+        </div></div>
+        <div id="resultView" class="view"><div class="card"><div class="section-title">考试结束</div><div id="resultContent"></div><div style="margin-top:24px; text-align:right;"><button id="backToPapersBtn" class="btn btn-secondary">返回试卷列表</button></div></div></div>
+    </div>
+</div>
+<script>
+    // ---------- 全局变量 ----------
+    let currentUser = null;
+    let availablePapers = [];
+    let currentPaperData = null;
+    let userAnswers = [];
+    let examTimer = null;
+    let timeSeconds = 0;
+    let currentAudio = null;
+    let examAudio = null;
+    let flatQuestions = [];
+    let isReviewMode = false;
+    let isPretestMode = false;
+    let pretestRemaining = 0;
+
+    // DOM
+    const loginView = document.getElementById('loginView');
+    const paperSelectView = document.getElementById('paperSelectView');
+    const guideView = document.getElementById('guideView');
+    const loadingView = document.getElementById('loadingView');
+    const examView = document.getElementById('examView');
+    const resultView = document.getElementById('resultView');
+    const loginBtn = document.getElementById('loginBtn');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginErrorSpan = document.getElementById('loginError');
+    const papersContainer = document.getElementById('papersContainer');
+    const noticeTextArea = document.getElementById('noticeTextArea');
+    const skipNoticeBtn = document.getElementById('skipNoticeBtn');
+    const submitExamBtn = document.getElementById('submitExamBtn');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const resultContent = document.getElementById('resultContent');
+    const backToPapersBtn = document.getElementById('backToPapersBtn');
+    const loadingMessageSpan = document.getElementById('loadingMessage');
+    const countdownDisplaySpan = document.getElementById('countdownDisplay');
+    const userInfoPanel = document.getElementById('userInfoPanel');
+    const userAvatarDiv = document.getElementById('userAvatar');
+    const userFullNameSpan = document.getElementById('userFullName');
+    const examContentArea = document.getElementById('examContentArea');
+
+    const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%235a6e85'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18'%3E考%3C/text%3E%3C/svg%3E";
+
+    function stopAllAudio() { if (currentAudio) { currentAudio.pause(); currentAudio = null; } if (examAudio) { examAudio.pause(); examAudio = null; } if (window.speechSynthesis) window.speechSynthesis.cancel(); }
+    function showView(viewId) { ['loginView','paperSelectView','guideView','loadingView','examView','resultView'].forEach(v => document.getElementById(v).classList.remove('active-view')); document.getElementById(viewId).classList.add('active-view'); }
+
+    // 登录
+    async function login(username, password) {
+        try {
+            const res = await fetch('users.json');
+            if (!res.ok) throw new Error('用户数据加载失败');
+            const users = await res.json();
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                currentUser = user;
+                userFullNameSpan.innerText = user.fullName || user.username;
+                const avatarUrl = (user.avatarUrl && user.avatarUrl.trim()) ? user.avatarUrl : DEFAULT_AVATAR;
+                userAvatarDiv.innerHTML = `<img src="${avatarUrl}" alt="avatar">`;
+                userInfoPanel.style.display = 'flex';
+                loginErrorSpan.textContent = '';
+                await loadPapersList();
+                showView('paperSelectView');
+            } else { loginErrorSpan.textContent = '账号或密码错误'; }
+        } catch (err) { loginErrorSpan.textContent = '系统错误'; console.error(err); }
+    }
+
+    async function loadPapersList() {
+        try {
+            const res = await fetch('papers.json');
+            if (!res.ok) throw new Error('试卷列表加载失败');
+            const allPapers = await res.json();
+            availablePapers = allPapers.filter(paper => { if (!paper.visibleTo) return false; if (paper.visibleTo.includes('*')) return true; return paper.visibleTo.includes(currentUser.username); });
+            renderPapersList();
+        } catch (err) { papersContainer.innerHTML = `<div style="color:red;">加载试卷失败</div>`; }
+    }
+    function renderPapersList() {
+        if (!availablePapers.length) { papersContainer.innerHTML = '<div>当前没有分配给您的试卷</div>'; return; }
+        papersContainer.innerHTML = availablePapers.map(paper => `<div class="paper-card" data-id="${paper.id}"><div class="paper-title">${paper.name}</div><div class="paper-desc">${paper.description || ''}</div><div><span class="btn btn-outline">选择此卷</span></div></div>`).join('');
+        document.querySelectorAll('.paper-card').forEach(card => { card.addEventListener('click', () => { const id = parseInt(card.dataset.id); const selected = availablePapers.find(p => p.id === id); if (selected) loadPaperDetail(selected); }); });
+    }
+
+    async function loadPaperDetail(paper) {
+        try {
+            const res = await fetch(paper.dataFile);
+            if (!res.ok) throw new Error(`无法加载试卷: ${paper.dataFile}`);
+            const detail = await res.json();
+            if (!detail.sections || !detail.sections.length) throw new Error('试卷没有大题');
+            currentPaperData = detail;
+            isReviewMode = currentPaperData.reviewMode === true || paper.dataFile.includes('listen14final');
+            flatQuestions = [];
+            currentPaperData.sections.forEach(section => {
+                section.questions.forEach(q => { flatQuestions.push(q); });
+            });
+            userAnswers = flatQuestions.map(q => {
+                if (q.type === 'multiple_choice') return [];
+                if (q.type === 'fill_blanks') return new Array(q.blanks.length).fill('');
+                return null;
+            });
+            noticeTextArea.innerHTML = `<strong>考试须知</strong><br><br>${currentPaperData.notice.replace(/\n/g,'<br>')}<br><br>考试限时 ${currentPaperData.timeLimit} 分钟。`;
+            showView('guideView');
+            if (currentPaperData.noticeAudioUrl) {
+                if (currentAudio) currentAudio.pause();
+                currentAudio = new Audio(currentPaperData.noticeAudioUrl);
+                currentAudio.play().catch(e => console.warn);
+            }
+        } catch (err) { alert(`试卷加载失败: ${err.message}`); }
+    }
+
+    function skipNoticeAndDownload() {
+        if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+        showView('loadingView');
+        loadingMessageSpan.innerText = '正在准备考试资源...';
+        countdownDisplaySpan.innerText = '--';
+        if (currentPaperData.examAudioUrl) {
+            examAudio = new Audio(currentPaperData.examAudioUrl);
+            examAudio.preload = "auto";
+            examAudio.load();
+        }
+        let count = 5;
+        countdownDisplaySpan.innerText = count;
+        const interval = setInterval(() => {
+            count--;
+            if (count <= 0) {
+                clearInterval(interval);
+                startExam();
+            } else {
+                countdownDisplaySpan.innerText = count;
+            }
+        }, 1000);
+    }
+
+    // 关键修复：动态生成选项字母，支持任意数量
+    function renderExamSections() {
+        examContentArea.innerHTML = '';
+        let globalQIndex = 0;
+        currentPaperData.sections.forEach((section, secIdx) => {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'section-block';
+            if (section.title) {
+                const title = document.createElement('div');
+                title.className = 'section-header';
+                title.innerText = section.title;
+                sectionDiv.appendChild(title);
+            }
+            if (section.imageUrl) {
+                const img = document.createElement('img');
+                img.src = section.imageUrl;
+                img.className = 'section-image';
+                img.style.maxWidth = '100%';
+                img.alt = `Section ${secIdx+1}`;
+                sectionDiv.appendChild(img);
+            }
+            section.questions.forEach((q, qIdx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'question-item';
+                const qNum = document.createElement('div');
+                qNum.className = 'q-num';
+                qNum.innerText = `${globalQIndex+1}.`;
+                qDiv.appendChild(qNum);
+
+                const answerArea = document.createElement('div');
+                answerArea.className = 'options';
+
+                if (q.type === 'single_choice') {
+                    q.options.forEach((opt, idx) => {
+                        const letter = String.fromCharCode(65 + idx); // A, B, C, D, E, F...
+                        const optDiv = document.createElement('div');
+                        optDiv.className = 'option';
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `q_${globalQIndex}`;
+                        radio.value = idx;
+                        if (userAnswers[globalQIndex] === idx) radio.checked = true;
+                        radio.addEventListener('change', () => { userAnswers[globalQIndex] = idx; });
+                        const label = document.createElement('label');
+                        label.innerText = letter;
+                        optDiv.appendChild(radio);
+                        optDiv.appendChild(label);
+                        answerArea.appendChild(optDiv);
+                    });
+                } else if (q.type === 'multiple_choice') {
+                    q.options.forEach((opt, idx) => {
+                        const letter = String.fromCharCode(65 + idx);
+                        const optDiv = document.createElement('div');
+                        optDiv.className = 'option';
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.value = idx;
+                        let currentVal = userAnswers[globalQIndex] || [];
+                        if (Array.isArray(currentVal) && currentVal.includes(idx)) cb.checked = true;
+                        cb.addEventListener('change', (e) => {
+                            let selected = userAnswers[globalQIndex] || [];
+                            if (!Array.isArray(selected)) selected = [];
+                            if (e.target.checked) { if (!selected.includes(idx)) selected.push(idx); }
+                            else { selected = selected.filter(v => v !== idx); }
+                            userAnswers[globalQIndex] = selected;
+                        });
+                        const label = document.createElement('label');
+                        label.innerText = letter;
+                        optDiv.appendChild(cb);
+                        optDiv.appendChild(label);
+                        answerArea.appendChild(optDiv);
+                    });
+                } else if (q.type === 'true_false') {
+                    ['T', 'F'].forEach(val => {
+                        const optDiv = document.createElement('div');
+                        optDiv.className = 'option';
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `q_${globalQIndex}`;
+                        radio.value = val;
+                        if (userAnswers[globalQIndex] === val) radio.checked = true;
+                        radio.addEventListener('change', () => { userAnswers[globalQIndex] = val; });
+                        const label = document.createElement('label');
+                        label.innerText = val === 'T' ? 'True' : 'False';
+                        optDiv.appendChild(radio);
+                        optDiv.appendChild(label);
+                        answerArea.appendChild(optDiv);
+                    });
+                } else if (q.type === 'fill_blank') {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'fill-input';
+                    input.placeholder = '请输入答案';
+                    if (userAnswers[globalQIndex] && typeof userAnswers[globalQIndex] === 'string') input.value = userAnswers[globalQIndex];
+                    input.addEventListener('input', (e) => { userAnswers[globalQIndex] = e.target.value.trim(); });
+                    answerArea.appendChild(input);
+                } else if (q.type === 'fill_blanks') {
+                    const blanks = q.blanks || [];
+                    blanks.forEach((blank, blankIdx) => {
+                        const group = document.createElement('div');
+                        group.className = 'fill-group';
+                        const label = document.createElement('span');
+                        label.innerText = blank.placeholder || `空 ${blankIdx+1}: `;
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.className = 'fill-input';
+                        input.style.width = '250px';
+                        let currentVal = (userAnswers[globalQIndex] && userAnswers[globalQIndex][blankIdx]) || '';
+                        input.value = currentVal;
+                        input.addEventListener('input', (e) => {
+                            if (!userAnswers[globalQIndex]) userAnswers[globalQIndex] = [];
+                            userAnswers[globalQIndex][blankIdx] = e.target.value.trim();
+                        });
+                        group.appendChild(label);
+                        group.appendChild(input);
+                        answerArea.appendChild(group);
+                    });
+                }
+                qDiv.appendChild(answerArea);
+                sectionDiv.appendChild(qDiv);
+                globalQIndex++;
+            });
+            examContentArea.appendChild(sectionDiv);
+        });
+    }
+
+    function showPretestScreen() {
+        examContentArea.innerHTML = `
+            <div class="pretest-area">
+                <p>试音时间</p>
+                <div class="pretest-timer" id="pretestTimerDisplay">04:30</div>
+                <p style="margin-top:20px;">请调整耳机音量，听力材料正在播放</p>
+                <div id="pretestAudioStatus" class="audio-status">正在连接音频...</div>
+                <p style="font-size:0.9rem; color:#666;">试题将在试音结束后自动显示</p>
+            </div>
+        `;
+    }
+
+    function updatePretestDisplay() {
+        const mins = Math.floor(pretestRemaining / 60);
+        const secs = pretestRemaining % 60;
+        const pretestElem = document.getElementById('pretestTimerDisplay');
+        if (pretestElem) pretestElem.innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+    }
+
+    async function startExam() {
+        if (!currentPaperData) return;
+        const pretestDuration = currentPaperData.preTestDuration || 0;
+        isPretestMode = (pretestDuration > 0);
+        
+        if (isPretestMode) {
+            showPretestScreen();
+        } else {
+            renderExamSections();
+        }
+        
+        if (examTimer) clearInterval(examTimer);
+        timeSeconds = currentPaperData.timeLimit * 60;
+        updateTimerDisplay();
+        examTimer = setInterval(() => {
+            if (timeSeconds <= 0) {
+                clearInterval(examTimer);
+                examTimer = null;
+                alert("考试时间已到，自动提交。");
+                forceSubmitExam();
+            } else {
+                timeSeconds--;
+                updateTimerDisplay();
+                if (isPretestMode && pretestRemaining > 0) {
+                    pretestRemaining--;
+                    updatePretestDisplay();
+                    if (pretestRemaining <= 0) {
+                        isPretestMode = false;
+                        renderExamSections();
+                    }
+                }
+            }
+        }, 1000);
+        
+        if (isPretestMode) {
+            pretestRemaining = pretestDuration;
+            const statusDiv = document.getElementById('pretestAudioStatus');
+            if (examAudio && examAudio.src) {
+                try {
+                    await examAudio.play();
+                    if (statusDiv) statusDiv.innerText = "音频播放中，请调节音量。";
+                } catch (err) {
+                    if (statusDiv) statusDiv.innerText = "音频播放失败，请检查网络或手动点击页面。";
+                }
+            } else if (currentPaperData.examAudioUrl) {
+                examAudio = new Audio(currentPaperData.examAudioUrl);
+                try {
+                    await examAudio.play();
+                    if (statusDiv) statusDiv.innerText = "音频播放中，请调节音量。";
+                } catch (err) {
+                    if (statusDiv) statusDiv.innerText = "音频播放失败，请检查网络。";
+                }
+            }
+        } else if (currentPaperData.examAudioUrl && !examAudio) {
+            examAudio = new Audio(currentPaperData.examAudioUrl);
+            examAudio.play().catch(e => console.warn);
+        } else if (examAudio) {
+            examAudio.play().catch(e => console.warn);
+        }
+        showView('examView');
+    }
+
+    function updateTimerDisplay() { const mins = Math.floor(timeSeconds/60), secs = timeSeconds%60; timerDisplay.textContent = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`; if (timeSeconds <= 60) timerDisplay.style.color = "#e67e22"; else timerDisplay.style.color = "#f5c542"; }
+    function forceSubmitExam() { if (examTimer) clearInterval(examTimer); submitExamWithProcessing(); }
+
+    function showAnswerSummary() {
+        let summaryHtml = `<div class="answer-summary"><h3>考生姓名：${currentUser.fullName || currentUser.username}</h3><p>请截屏保存以下答案，本系统不自动批改。</p>`;
+        flatQuestions.forEach((q, idx) => {
+            let userAnswerStr = '';
+            const userAns = userAnswers[idx];
+            if (q.type === 'single_choice') {
+                const letters = q.options.map((_, i) => String.fromCharCode(65+i));
+                userAnswerStr = (userAns !== null && userAns !== undefined) ? letters[userAns] : '未选';
+            } else if (q.type === 'multiple_choice') {
+                const letters = q.options.map((_, i) => String.fromCharCode(65+i));
+                if (Array.isArray(userAns) && userAns.length) userAnswerStr = userAns.map(i => letters[i]).join(',');
+                else userAnswerStr = '未选';
+            } else if (q.type === 'true_false') {
+                userAnswerStr = userAns || '未选';
+            } else if (q.type === 'fill_blank') {
+                userAnswerStr = userAns || '未填';
+            } else if (q.type === 'fill_blanks') {
+                const blanks = q.blanks || [];
+                const answers = Array.isArray(userAns) ? userAns : [];
+                userAnswerStr = blanks.map((b, i) => `${b.placeholder || '空'+(i+1)}: ${answers[i] || '未填'}`).join(' ; ');
+            }
+            summaryHtml += `<div class="summary-item"><strong>${idx+1}. </strong> 答案：${userAnswerStr}</div>`;
+        });
+        summaryHtml += `<div class="info-note" style="margin-top:20px;">考试结束，请截屏保存本页面。点击下方按钮返回试卷列表。</div></div>`;
+        resultContent.innerHTML = summaryHtml;
+        showView('resultView');
+    }
+
+    function submitExamWithProcessing() {
+        if (examTimer) { clearInterval(examTimer); examTimer = null; }
+        if (examAudio) { examAudio.pause(); examAudio = null; }
+        stopAllAudio();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay-message';
+        overlay.innerHTML = `<div>正在上传答案，请勿触碰页面...</div><div id="processingStep">处理中</div>`;
+        document.body.appendChild(overlay);
+        setTimeout(() => {
+            overlay.remove();
+            if (isReviewMode) {
+                showAnswerSummary();
+            } else {
+                const { correctCount, total, percent, details } = computeScore();
+                const resultHtml = `<div style="background:#f8fafc; padding:20px; text-align:center;"><div style="font-size:2rem; font-weight:800;">${percent} 分</div><div>正确题数: ${correctCount} / ${total}</div><div style="height:4px; background:#e2e8f0; margin:16px 0;"><div style="width:${(correctCount/total)*100}%; height:4px; background:#8b2c1d;"></div></div><div style="text-align:left; max-height:300px; overflow:auto;">${details.join('')}</div><div class="info-note" style="margin-top:20px;">听力考试已结束。</div></div>`;
+                resultContent.innerHTML = resultHtml;
+                showView('resultView');
+            }
+        }, 800);
+    }
+
+    function computeScore() {
+        let correctCount = 0;
+        const details = [];
+        for (let i = 0; i < flatQuestions.length; i++) {
+            const q = flatQuestions[i];
+            const userAns = userAnswers[i];
+            let isCorrect = false;
+            let correctStr = '', userStr = '';
+            if (q.type === 'single_choice') {
+                const letters = q.options.map((_, i) => String.fromCharCode(65+i));
+                correctStr = letters[q.correct];
+                userStr = (userAns !== null && userAns !== undefined) ? letters[userAns] : '未作答';
+                isCorrect = (userAns === q.correct);
+            } else if (q.type === 'multiple_choice') {
+                const letters = q.options.map((_, i) => String.fromCharCode(65+i));
+                const correctArr = q.correct.slice().sort();
+                const userArr = (userAns && Array.isArray(userAns)) ? userAns.slice().sort() : [];
+                correctStr = correctArr.map(v => letters[v]).join(',');
+                userStr = userArr.map(v => letters[v]).join(',') || '未作答';
+                isCorrect = (correctArr.length === userArr.length && correctArr.every((v,i) => v === userArr[i]));
+            } else if (q.type === 'true_false') {
+                correctStr = q.correct;
+                userStr = userAns || '未作答';
+                isCorrect = (userAns === q.correct);
+            } else if (q.type === 'fill_blank') {
+                const correctAnswer = q.correct.trim().toLowerCase();
+                const userAnswer = (userAns && typeof userAns === 'string') ? userAns.trim().toLowerCase() : '';
+                correctStr = q.correct;
+                userStr = userAnswer || '未作答';
+                isCorrect = (userAnswer === correctAnswer);
+            } else if (q.type === 'fill_blanks') {
+                const blanks = q.blanks || [];
+                const userAnswersArr = (userAns && Array.isArray(userAns)) ? userAns : [];
+                let allCorrect = true;
+                const correctParts = [];
+                const userParts = [];
+                blanks.forEach((blank, idx) => {
+                    const correctAns = blank.correct.trim().toLowerCase();
+                    const userAnsVal = (userAnswersArr[idx] || '').trim().toLowerCase();
+                    correctParts.push(correctAns);
+                    userParts.push(userAnsVal || '未填');
+                    if (correctAns !== userAnsVal) allCorrect = false;
+                });
+                correctStr = correctParts.join(' / ');
+                userStr = userParts.join(' / ');
+                isCorrect = allCorrect;
+            }
+            if (isCorrect) correctCount++;
+            details.push(`<div><strong>第${i+1}题</strong> 正确答案：${correctStr} | 您的答案：${userStr} ${isCorrect ? '正确' : '错误'}</div>`);
+        }
+        const percent = (correctCount / flatQuestions.length * 100).toFixed(0);
+        return { correctCount, total: flatQuestions.length, percent, details };
+    }
+
+    function backToPapers() {
+        if (examTimer) clearInterval(examTimer);
+        stopAllAudio();
+        examAudio = null;
+        currentPaperData = null;
+        flatQuestions = [];
+        userAnswers = [];
+        showView('paperSelectView');
+        loadPapersList();
+    }
+
+    // 事件绑定
+    loginBtn.onclick = () => { const u = usernameInput.value.trim(), p = passwordInput.value; if (!u || !p) { loginErrorSpan.textContent = '请输入账号和密码'; return; } login(u, p); };
+    skipNoticeBtn.onclick = () => { if (currentPaperData) skipNoticeAndDownload(); else alert("试卷数据异常"); };
+    submitExamBtn.onclick = () => { if (confirm("确认提交试卷吗？")) submitExamWithProcessing(); };
+    backToPapersBtn.onclick = backToPapers;
+    usernameInput.onkeypress = e => { if(e.key === 'Enter') loginBtn.click(); };
+    passwordInput.onkeypress = e => { if(e.key === 'Enter') loginBtn.click(); };
+</script>
+</body>
+</html>

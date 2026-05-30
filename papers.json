@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "YHD系统测试卷",
+    "description": "测试基本功能，请测试员认真进行",
+    "dataFile": "paper-demo.json",
+    "visibleTo": ["039","034"]
+  },
+  {
+    "id": 2,
+    "name": "Listening 12",
+    "description": "听力模拟12",
+    "dataFile": "paper-listening12.json",
+    "visibleTo": ["041","034","039"]
+  },
+  {
+    "id": 3,
+    "name": "初中学业水平考试模拟练习",
+    "description": "所有考生可见",
+    "dataFile": "paper-listen14final.json",
+    "visibleTo": ["*"]
+  }
+]
