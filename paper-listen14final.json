@@ -1,0 +1,55 @@
+{
+  "paperName": "2026初中学业水平考试模拟练习（外语听力）",
+  "timeLimit": 30,
+  "notice": "考生请注意：本试卷共四个大题。听力材料播放完毕后请直接作答。考试结束后请截屏保存答案。",
+  "noticeAudioUrl": "https://www.qmpan.com/f/4DL1UE/%E8%80%83%E5%89%8D%E9%A1%BB%E7%9F%A5.mp3",
+  "examAudioUrl": "https://www.qmpan.com/f/978qiK/target_35paper-listen14final1686615.mp3",
+  "reviewMode": true,
+"preTestDuration": 0,
+  "sections": [
+    {
+      "title": "A. Listen and choose the right picture",
+      "imageUrl": "14picA.jpeg",
+      "questions": [
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D","E","F"], "correct": 0 },
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D","E","F"], "correct": 1 },
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D","E","F"], "correct": 2 },
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D","E","F"], "correct": 3 },
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D","E","F"], "correct": 4 }
+      ]
+    },
+    {
+      "title": "B. Listen and choose the best answer",
+      "imageUrl": "14picB.jpeg",
+      "questions": [
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D"], "correct": 1 },
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D"], "correct": 2 },
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D"], "correct": 0 },
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D"], "correct": 3 },
+        { "type": "single_choice", "stem": "", "options": ["A","B","C","D"], "correct": 2 }
+      ]
+    },
+    {
+      "title": "C. True or False",
+      "imageUrl": "14picC.jpeg",
+      "questions": [
+        { "type": "true_false", "stem": "", "correct": "T" },
+        { "type": "true_false", "stem": "", "correct": "T" },
+        { "type": "true_false", "stem": "", "correct": "F" },
+        { "type": "true_false", "stem": "", "correct": "T" },
+        { "type": "true_false", "stem": "", "correct": "F" }
+      ]
+    },
+    {
+      "title": "D. Fill in the blanks (each question has two blanks)",
+      "imageUrl": "14picD.jpeg",
+      "questions": [
+        { "type": "fill_blanks", "stem": "", "blanks": [{"placeholder": "空1", "correct": "Xi'an"}, {"placeholder": "空2", "correct": "China"}] },
+        { "type": "fill_blanks", "stem": "", "blanks": [{"placeholder": "空1", "correct": "paper"}, {"placeholder": "空2", "correct": "spices"}] },
+        { "type": "fill_blanks", "stem": "", "blanks": [{"placeholder": "空1", "correct": "ideas"}, {"placeholder": "空2", "correct": "culture"}] },
+        { "type": "fill_blanks", "stem": "", "blanks": [{"placeholder": "空1", "correct": "cooperation"}, {"placeholder": "空2", "correct": "trade"}] },
+        { "type": "fill_blanks", "stem": "", "blanks": [{"placeholder": "空1", "correct": "100"}, {"placeholder": "空2", "correct": "140"}] }
+      ]
+    }
+  ]
+}
