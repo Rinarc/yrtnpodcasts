@@ -18,6 +18,6 @@
     "name": "初中学业水平考试模拟练习",
     "description": "所有考生可见",
     "dataFile": "paper-listen14final.json",
-    "visibleTo": ["034"]
+    "visibleTo": ["*"]
   }
 ]
