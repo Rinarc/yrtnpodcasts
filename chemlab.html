@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高中化学虚拟实验室 · 高一无机化学</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0e1a;--panel:#121827;--panel2:#1a2337;--line:#2a3550;
+  --txt:#e8ecf5;--sub:#9aa7c2;--accent:#4fd1c5;--accent2:#f6ad55;
+  --danger:#fc5c7d;--warn:#f6e05e;--ok:#68d391;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:radial-gradient(circle at 20% 10%,#16233f 0%,var(--bg) 55%);
+  color:var(--txt);font-size:14px;line-height:1.5}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;color:inherit}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:#33405f;border-radius:3px}
+
+#app{display:flex;flex-direction:column;height:100vh}
+header{display:flex;align-items:center;gap:10px;padding:8px 12px;
+  background:linear-gradient(90deg,#0f1729,#161f36);border-bottom:1px solid var(--line);flex:0 0 auto}
+header .logo{font-size:20px}
+header h1{font-size:15px;font-weight:700;white-space:nowrap}
+header .spacer{flex:1}
+.icon-btn{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  padding:6px 9px;font-size:12px;color:var(--sub);transition:.15s;white-space:nowrap}
+.icon-btn:hover{color:var(--txt);border-color:var(--accent)}
+
+#statusbar{display:flex;align-items:center;gap:12px;padding:5px 12px;background:#0c1120;
+  border-bottom:1px solid var(--line);font-size:11.5px;color:var(--sub);flex:0 0 auto;flex-wrap:wrap}
+#statusbar b{color:var(--accent)}
+#statusbar .dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--ok);box-shadow:0 0 6px var(--ok);margin-right:4px}
+@keyframes pulse{50%{opacity:.3}}
+
+main{flex:1;display:flex;min-height:0;position:relative}
+#stage-wrap{flex:1;position:relative;min-width:0}
+#bench{flex:1;position:relative;overflow:hidden;height:100%;
+  background:radial-gradient(ellipse at 50% 110%,#1e3a5f 0%,#0d1525 70%),linear-gradient(#0d1525,#0a0e1a)}
+#bench::after{content:"";position:absolute;left:0;right:0;bottom:0;height:64px;pointer-events:none;
+  background:linear-gradient(180deg,transparent,#2a1a0e 40%,#3d2818 60%,#1c1108);border-top:2px solid #5a3a20}
+#canvas{display:block;width:100%;height:100%;touch-action:none}
+#hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:5;
+  background:rgba(10,14,26,.88);border:1px solid var(--line);border-radius:18px;
+  padding:6px 14px;font-size:12px;color:var(--sub);pointer-events:none;transition:.3s;max-width:92%;text-align:center}
+#hint.hide{opacity:0}
+
+#toasts{position:absolute;left:0;right:0;bottom:74px;z-index:20;display:flex;flex-direction:column;
+  align-items:center;gap:6px;pointer-events:none;padding:0 10px}
+.toast{background:rgba(10,14,26,.95);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:8px;padding:7px 14px;font-size:12.5px;max-width:100%;text-align:center;
+  animation:su .3s ease,fo .4s ease 3.4s forwards}
+.toast.warn{border-left-color:var(--warn)}
+.toast.danger{border-left-color:var(--danger)}
+.toast .eq{display:block;margin-top:3px;font-weight:700;color:var(--accent2);font-size:12px}
+@keyframes su{from{opacity:0;transform:translateY(10px)}}
+@keyframes fo{to{opacity:0;transform:translateY(-8px)}}
+
+aside{width:340px;flex:0 0 340px;background:var(--panel);border-left:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;flex:0 0 auto;border-bottom:1px solid var(--line);background:#0f1525}
+.tab{flex:1;padding:10px 3px;font-size:12px;color:var(--sub);background:none;border-bottom:2px solid transparent}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:#161f36}
+.tab-body{flex:1;overflow-y:auto;padding:10px;display:none}
+.tab-body.active{display:block}
+
+.group-title{font-size:11px;color:var(--sub);letter-spacing:1px;margin:12px 2px 6px;
+  padding-bottom:4px;border-bottom:1px dashed var(--line)}
+.group-title:first-child{margin-top:0}
+.item-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.item{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 8px;
+  display:flex;align-items:center;gap:7px;transition:.12s;position:relative;text-align:left}
+.item:hover{border-color:var(--accent);background:#1e2a44}
+.item .sw{font-size:16px;flex:0 0 auto}
+.item .nm{font-size:11.5px;line-height:1.25}
+.item .fm{font-size:9.5px;color:var(--sub)}
+.item.sel{outline:2px solid var(--accent2);background:#243050}
+
+.meter-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px}
+.meter-row label{flex:0 0 62px;color:var(--sub)}
+.meter-row input[type=range]{flex:1;accent-color:var(--accent);min-width:0}
+.meter-row .val{flex:0 0 46px;text-align:right;color:var(--accent);font-size:11.5px}
+.small-btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:6px 8px;font-size:11.5px;color:var(--txt);transition:.12s}
+.small-btn:hover{border-color:var(--accent);color:var(--accent)}
+.small-btn.on{background:var(--accent);color:#042;font-weight:700;border-color:var(--accent)}
+.small-btn.hot{background:var(--danger);color:#fff;border-color:var(--danger);font-weight:700}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.btnrow .small-btn{flex:1;min-width:76px}
+.act{width:100%;padding:11px;border-radius:10px;font-size:14px;font-weight:700;
+  background:linear-gradient(135deg,var(--accent),#38b2ac);color:#042;margin:8px 0}
+.act.red{background:linear-gradient(135deg,var(--danger),#e53e3e);color:#fff}
+.act.dim{background:linear-gradient(135deg,#4a5568,#2d3748);color:#cbd5e0}
+
+#info-panel{font-size:12.5px}
+.rx-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.rx-eq{font-size:14px;font-weight:700;margin-bottom:6px;line-height:1.5}
+.rx-line{display:flex;gap:6px;margin:4px 0;font-size:11.5px;color:var(--sub)}
+.rx-line .k{flex:0 0 46px;color:var(--accent2)}
+.rx-line .v{color:var(--txt);flex:1}
+.tag{display:inline-block;font-size:10px;padding:1px 7px;border-radius:10px;margin:2px 3px 2px 0;
+  background:#2a3550;color:var(--sub)}
+.tag.hot{background:rgba(252,92,125,.2);color:var(--danger)}
+.tag.ok{background:rgba(104,211,145,.2);color:var(--ok)}
+.tag.w{background:rgba(246,224,94,.2);color:var(--warn)}
+.empty{color:var(--sub);font-size:12px;padding:8px 2px}
+
+.modal{position:fixed;inset:0;background:#000a;z-index:100;display:none;align-items:center;justify-content:center;padding:14px}
+.modal.show{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  max-width:580px;max-height:86vh;overflow-y:auto;padding:18px;width:100%}
+.modal h2{font-size:17px;color:var(--accent);margin-bottom:8px}
+.modal h3{font-size:13.5px;color:var(--accent2);margin:14px 0 5px}
+.modal p,.modal li{font-size:12.5px;color:var(--sub);line-height:1.7}
+.modal ul{margin-left:17px}
+.modal .close-x{margin-top:14px;width:100%;padding:10px;background:var(--accent);color:#042;font-weight:700;border-radius:8px}
+.rx-item{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px;
+  cursor:pointer;transition:.12s;text-align:left;width:100%;display:block}
+.rx-item:hover{border-color:var(--accent);background:#1e2a44}
+.rx-item .t{font-size:12.5px;font-weight:600;color:var(--txt)}
+.rx-item .e{font-size:11px;color:var(--accent2);margin-top:2px}
+.rx-item .p{font-size:11px;color:var(--sub);margin-top:2px}
+
+#mob-toggle{display:none;position:absolute;right:10px;top:70px;z-index:25;background:var(--accent);color:#042;
+  border-radius:50%;width:42px;height:42px;align-items:center;justify-content:center;font-size:19px;
+  box-shadow:0 4px 12px rgba(0,0,0,.4)}
+@media(max-width:840px){
+  aside{position:absolute;right:0;top:0;bottom:0;z-index:30;box-shadow:-4px 0 24px rgba(0,0,0,.5);
+    transform:translateX(102%);transition:.25s;width:300px;flex-basis:300px}
+  aside.open{transform:translateX(0)}
+  #mob-toggle{display:flex}
+  header h1{font-size:13px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="logo">🧪</span>
+    <h1>高中化学虚拟实验室</h1>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="btn-help">❓说明</button>
+    <button class="icon-btn" id="btn-book">📖反应手册</button>
+    <button class="icon-btn" id="btn-clear">🗑️清空</button>
+  </header>
+  <div id="statusbar">
+    <span><span class="dot" id="st-dot"></span><b id="st-state">就绪</b></span>
+    <span>🌡️<b id="st-temp">25</b>℃</span>
+    <span>🔥<b id="st-fire">无</b></span>
+    <span>📦<b id="st-items">0</b>种</span>
+    <span>🧯<b id="st-safe">安全</b></span>
+  </div>
+  <main>
+    <div id="stage-wrap">
+      <div id="bench"><canvas id="canvas"></canvas>
+        <div id="hint">①左侧选试剂 ②点台面放入 ③再选另一种点进去 ④点「反应」</div>
+        <div id="toasts"></div>
+      </div>
+      <button id="mob-toggle">🧰</button>
+    </div>
+    <aside id="aside">
+      <div class="tabs">
+        <button class="tab active" data-tab="reagent">试剂</button>
+        <button class="tab" data-tab="glass">仪器</button>
+        <button class="tab" data-tab="cond">操作</button>
+        <button class="tab" data-tab="info">现象</button>
+      </div>
+      <div class="tab-body active" id="tab-reagent"></div>
+      <div class="tab-body" id="tab-glass"></div>
+      <div class="tab-body" id="tab-cond">
+        <div class="group-title">条件控制</div>
+        <div class="meter-row"><label>温度</label>
+          <input type="range" id="r-temp" min="0" max="1000" value="25" step="5">
+          <span class="val" id="v-temp">25℃</span></div>
+        <div class="meter-row"><label>用量</label>
+          <input type="range" id="r-amt" min="1" max="5" value="3" step="1">
+          <span class="val" id="v-amt">中</span></div>
+        <div class="group-title">操作</div>
+        <div class="btnrow">
+          <button class="small-btn" id="b-heat">🔥加热</button>
+          <button class="small-btn" id="b-ignite">🔥点燃</button>
+          <button class="small-btn" id="b-stop">🧯熄火</button>
+          <button class="small-btn" id="b-shake">🔄振荡</button>
+          <button class="small-btn" id="b-light">💡光照</button>
+          <button class="small-btn" id="b-elec">⚡通电</button>
+          <button class="small-btn" id="b-catalyst">🧲加MnO₂</button>
+          <button class="small-btn" id="b-stopper">🛡️塞橡皮塞</button>
+        </div>
+        <div class="group-title">经典实验一键演示</div>
+        <div class="btnrow">
+          <button class="small-btn hot" id="d-na">💥钠入水</button>
+          <button class="small-btn hot" id="d-h2">💥氢气爆鸣</button>
+          <button class="small-btn hot" id="d-al">🔥铝热反应</button>
+          <button class="small-btn hot" id="d-mg">✨镁条燃烧</button>
+          <button class="small-btn hot" id="d-fe">✨铁在氧气</button>
+          <button class="small-btn" id="d-flame">🌈焰色反应</button>
+          <button class="small-btn" id="d-h2so4">🖤浓H₂SO₄脱水</button>
+          <button class="small-btn" id="d-na2o2">💨Na₂O₂滴水</button>
+          <button class="small-btn" id="d-nh3">☁️氨气喷泉</button>
+          <button class="small-btn" id="d-o2">🫧制O₂</button>
+          <button class="small-btn" id="d-cl2">🟢制Cl₂</button>
+          <button class="small-btn" id="d-co2">🫧制CO₂</button>
+        </div>
+        <button class="act red" id="b-react">⚡ 让它们反应！</button>
+        <button class="act dim" id="b-reset">↺ 重置台面</button>
+      </div>
+      <div class="tab-body" id="tab-info">
+        <div id="info-panel"><p class="empty">加入试剂并反应后，这里显示：<b style="color:var(--accent2)">化学方程式</b>、<b style="color:var(--accent2)">反应现象</b>、<b style="color:var(--accent2)">考点提示</b>。</p></div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="modal" id="modal-help"><div class="box">
+  <h2>🧪 虚拟实验室使用说明</h2>
+  <p>专为<b style="color:var(--accent)">高一化学</b>设计，涵盖无机物的性质与反应。现象按真实原理模拟（视觉做了夸张，方便观察）。</p>
+  <h3>基本操作</h3>
+  <ul>
+    <li><b>选试剂</b>：在「试剂」页点一种（高亮即选中）。</li>
+    <li><b>加入容器</b>：<b>点实验台任意位置</b> → 该试剂进入容器（可连续加多种）。</li>
+    <li><b>发生反应</b>：点「⚡让它们反应！」；需加热/点燃时会提示你。</li>
+    <li><b>看结果</b>：台面播放现象（气泡/沉淀/火焰/爆炸），右侧「现象」页给方程式+考点。</li>
+  </ul>
+  <h3>看懂界面</h3>
+  <ul>
+    <li><b>台面</b>：显示容器（试管/烧杯/蒸发皿）、液体颜色、沉淀、气泡、火焰、烟雾。</li>
+    <li><b>状态栏</b>：温度、是否有火焰、容器内物质数、安全警示。</li>
+    <li><b>现象页</b>：反应后显示方程式 + 完整现象描述 + 考点。</li>
+  </ul>
+  <h3>玩得更真</h3>
+  <ul>
+    <li>调温度到 300℃ 以上可引发热分解、还原反应（如 H₂ 还原 CuO）。</li>
+    <li>生成 H₂/CH₄/CO 等可燃气体后，点「🔥点燃」→ 爆鸣或燃烧。</li>
+    <li>「经典实验一键演示」里有必修一所有重要实验。</li>
+    <li>点「📖反应手册」可查看/一键重演所有收录反应。</li>
+  </ul>
+  <p style="margin-top:10px;color:var(--warn)">⚠️ 虚拟实验仅供学习。真实实验须在老师指导下、戴护目镜手套操作。</p>
+  <button class="close-x" onclick="document.getElementById('modal-help').classList.remove('show')">开始实验</button>
+</div></div>
+
+<div class="modal" id="modal-book"><div class="box">
+  <h2>📖 高中无机反应手册</h2>
+  <p style="margin-bottom:10px">点任意条目 → 自动配制试剂并演示该反应。</p>
+  <div id="book-list"></div>
+  <button class="close-x" onclick="document.getElementById('modal-book').classList.remove('show')">关闭</button>
+</div></div>
+
+<script>
+/* ============ 物质数据库 ============ */
+const SUB={};
+function def(id,o){SUB[id]={id,...o}};
+/* ---- 酸 ---- */
+def("H2O",{n:"水",f:"H₂O",s:"l",c:"#7fd8ff",ph:7,cat:"常见",g:"💧",d:"最常用的溶剂，极性分子。稀释浓硫酸时必须把酸倒入水中。"});
+def("HCl",{n:"稀盐酸",f:"HCl",s:"aq",c:"#e8f4ff",ph:1,cat:"酸",g:"🧴",d:"强酸，具酸的通性：与活泼金属、碱、碱性氧化物、盐反应。"});
+def("H2SO4c",{n:"浓硫酸",f:"浓H₂SO₄",s:"l",c:"#c9a86a",ph:0,cat:"酸",g:"🧪",d:"吸水性、脱水性、强氧化性。与金属反应不生成H₂。"});
+def("H2SO4d",{n:"稀硫酸",f:"稀H₂SO₄",s:"aq",c:"#f0e6ce",ph:1,cat:"酸",g:"🧴",d:"强酸，与活泼金属生成H₂。"});
+def("HNO3c",{n:"浓硝酸",f:"浓HNO₃",s:"l",c:"#b6c46a",ph:0,cat:"酸",g:"🧪",d:"强氧化性，使Fe/Al钝化，与Cu生成NO₂，见光分解。"});
+def("HNO3d",{n:"稀硝酸",f:"稀HNO₃",s:"aq",c:"#dce8b0",ph:1,cat:"酸",g:"🧴",d:"强氧化性酸，与Cu生成NO，遇空气变红棕色。"});
+def("H3PO4",{n:"磷酸",f:"H₃PO₄",s:"aq",c:"#fff2cc",ph:2,cat:"酸",g:"🧴",d:"中强三元酸，难挥发。"});
+def("CH3COOH",{n:"乙酸",f:"CH₃COOH",s:"l",c:"#f7f5ef",ph:3,cat:"酸",g:"🧴",d:"醋酸，弱酸，酸性比碳酸强。"});
+def("vinegar",{n:"食醋",f:"CH₃COOH",s:"aq",c:"#f7f5ef",ph:3,cat:"酸",g:"🧴",d:"含乙酸，能与Na₂CO₃、CaCO₃反应放出CO₂。"});
+def("HF",{n:"氢氟酸",f:"HF",s:"aq",c:"#e0ffff",ph:2,cat:"酸",g:"🧴",d:"弱酸，但能刻蚀玻璃（与SiO₂反应）。"});
+def("HClO",{n:"次氯酸",f:"HClO",s:"aq",c:"#eef7ee",ph:4,cat:"酸",g:"🧴",d:"弱酸，强氧化性，见光分解。漂白原理。"});
+def("H2SiO3",{n:"硅酸",f:"H₂SiO₃",s:"s",c:"#f7f7f5",ph:5,cat:"酸",g:"🪨",d:"白色胶状沉淀，弱酸（比碳酸还弱）。"});
+/* ---- 碱 ---- */
+def("NaOH",{n:"NaOH溶液",f:"NaOH",s:"aq",c:"#b8cfe8",ph:14,cat:"碱",g:"🧪",d:"强碱（烧碱），与酸、酸性氧化物、盐反应。"});
+def("KOH",{n:"KOH溶液",f:"KOH",s:"aq",c:"#c6d8ee",ph:14,cat:"碱",g:"🧪",d:"强碱，焰色反应呈紫色。"});
+def("CaOH2",{n:"澄清石灰水",f:"Ca(OH)₂",s:"aq",c:"#eaf6f0",ph:12,cat:"碱",g:"🧴",d:"微溶，检验CO₂变浑浊，检验NaHCO₃。"});
+def("CaOH2s",{n:"石灰乳",f:"Ca(OH)₂",s:"s",c:"#f5f0e6",ph:12,cat:"碱",g:"🪨",d:"Ca(OH)₂悬浊液，用于制漂白粉、吸收Cl₂。"});
+def("NH3H2O",{n:"氨水",f:"NH₃·H₂O",s:"aq",c:"#dcefe6",ph:11,cat:"碱",g:"🧴",d:"弱碱，易分解放出NH₃（刺激性气味）。"});
+def("BaOH2",{n:"Ba(OH)₂溶液",f:"Ba(OH)₂",s:"aq",c:"#eaf6f0",ph:13,cat:"碱",g:"🧴",d:"强碱，与SO₄²⁻生成白色BaSO₄沉淀。"});
+def("CuOH2",{n:"Cu(OH)₂",f:"Cu(OH)₂",s:"s",c:"#2f8f4e",ph:7,cat:"碱",g:"🪨",d:"蓝色难溶碱，溶于酸，受热分解为黑色CuO。"});
+def("FeOH3",{n:"Fe(OH)₃",f:"Fe(OH)₃",s:"s",c:"#8a5a2a",ph:7,cat:"碱",g:"🪨",d:"红褐色难溶碱，受热分解为Fe₂O₃。"});
+def("FeOH2",{n:"Fe(OH)₂",f:"Fe(OH)₂",s:"s",c:"#9ec0a0",ph:7,cat:"碱",g:"🪨",d:"白色沉淀，迅速变灰绿→红褐色（被O₂氧化）。"});
+def("MgOH2",{n:"Mg(OH)₂",f:"Mg(OH)₂",s:"s",c:"#f2f7f2",ph:10,cat:"碱",g:"🪨",d:"白色难溶碱，能溶于铵盐溶液。"});
+def("AlOH3",{n:"Al(OH)₃",f:"Al(OH)₃",s:"s",c:"#f3f6f3",ph:7,cat:"两性",g:"🪨",d:"白色胶状，两性：溶于强酸也溶于强碱。用于净水。"});
+/* ---- 金属单质 ---- */
+def("Na",{n:"金属钠",f:"Na",s:"s",c:"#d9d2c8",ph:7,cat:"金属",g:"⚙️",d:"银白色软金属，密度<水，保存在煤油中。与水剧烈反应（浮熔游响红）。"});
+def("K",{n:"金属钾",f:"K",s:"s",c:"#e8e4dc",ph:7,cat:"金属",g:"⚙️",d:"比Na更活泼，与水反应更剧烈，H₂常点燃呈紫色火焰。"});
+def("Li",{n:"金属锂",f:"Li",s:"s",c:"#e8e8ea",ph:7,cat:"金属",g:"⚙️",d:"最轻金属，与水反应但不熔化，火焰呈紫红色。"});
+def("Mg",{n:"镁条",f:"Mg",s:"s",c:"#ede9d8",ph:7,cat:"金属",g:"⚙️",d:"点燃发出耀眼白光，生成白色MgO（照明弹原理）。"});
+def("Al",{n:"铝片/粉",f:"Al",s:"s",c:"#dde3e8",ph:7,cat:"金属",g:"⚙️",d:"活泼金属，表面致密氧化膜耐腐蚀。铝热剂成分，溶于强酸强碱。"});
+def("Zn",{n:"锌粒",f:"Zn",s:"s",c:"#c9c2b8",ph:7,cat:"金属",g:"⚙️",d:"活泼金属，与酸生成H₂，实验室制氢气常用。"});
+def("Fe",{n:"铁粉",f:"Fe",s:"s",c:"#b8a99a",ph:7,cat:"金属",g:"⚙️",d:"能被磁铁吸引，在O₂中燃烧火星四射生成Fe₃O₄。"});
+def("Fewire",{n:"铁丝",f:"Fe",s:"s",c:"#a89a8c",ph:7,cat:"金属",g:"⚙️",d:"块状铁。与水蒸气高温反应生成Fe₃O₄和H₂。"});
+def("Cu",{n:"铜片",f:"Cu",s:"s",c:"#c98a3c",ph:7,cat:"金属",g:"⚙️",d:"紫红色，不活泼，与氧化性酸（浓H₂SO₄、HNO₃）反应。"});
+def("Ag",{n:"银片",f:"Ag",s:"s",c:"#e0e0e4",ph:7,cat:"金属",g:"⚙️",d:"不活泼金属，焰色反应用铂丝/铁丝。"});
+def("Ca_m",{n:"金属钙",f:"Ca",s:"s",c:"#e0e0d8",ph:7,cat:"金属",g:"⚙️",d:"活泼金属，与水反应生成Ca(OH)₂和H₂。"});
+/* ---- 非金属单质 ---- */
+def("C",{n:"木炭/炭粉",f:"C",s:"s",c:"#2b2b2b",ph:7,cat:"非金属",g:"⚫",d:"还原剂，高温还原CuO、Fe₂O₃；与浓H₂SO₄反应生成CO₂和SO₂。"});
+def("S",{n:"硫粉",f:"S",s:"s",c:"#f4d83a",ph:7,cat:"非金属",g:"🟡",d:"淡黄色，在O₂中燃烧明亮蓝紫色火焰，生成SO₂。与Fe生成FeS。"});
+def("P",{n:"红磷",f:"P",s:"s",c:"#9a2b2b",ph:7,cat:"非金属",g:"🟤",d:"着火点240℃，燃烧生成白烟P₂O₅（测空气中O₂含量实验）。"});
+def("I2",{n:"碘单质",f:"I₂",s:"s",c:"#3a2418",ph:7,cat:"非金属",g:"🟤",d:"紫黑色，易升华，遇淀粉变蓝。"});
+def("Br2",{n:"溴水",f:"Br₂",s:"l",c:"#8a2f10",ph:7,cat:"非金属",g:"🟤",d:"橙黄色溶液，能氧化I⁻析出I₂。"});
+def("Cl2",{n:"氯气",f:"Cl₂",s:"g",c:"#7fcf7f",ph:7,cat:"非金属",g:"🫁",d:"黄绿色有毒气体，强氧化性。与H₂混合光照爆炸。"});
+def("O2",{n:"氧气",f:"O₂",s:"g",c:"#b3e0ff",ph:7,cat:"非金属",g:"💨",d:"助燃，物质在其中燃烧更剧烈。"});
+def("H2",{n:"氢气",f:"H₂",s:"g",c:"#ffe9a8",ph:7,cat:"非金属",g:"💨",d:"最轻气体，淡蓝色火焰，与空气混合点燃爆鸣。"});
+def("N2",{n:"氮气",f:"N₂",s:"g",c:"#dde7ea",ph:7,cat:"非金属",g:"💨",d:"无色无味，化学性质稳定，常用作保护气。"});
+/* ---- 氧化物 ---- */
+def("CaO",{n:"生石灰",f:"CaO",s:"s",c:"#e3ddd2",ph:12,cat:"氧化物",g:"🪨",d:"与水剧烈反应生成Ca(OH)₂并放大量热（可煮鸡蛋、自热火锅）。"});
+def("CuO",{n:"氧化铜",f:"CuO",s:"s",c:"#2b1c10",ph:7,cat:"氧化物",g:"🪨",d:"黑色碱性氧化物，溶于酸成蓝色Cu²⁺，可被H₂/CO/C还原为红色Cu。"});
+def("Fe2O3",{n:"氧化铁",f:"Fe₂O₃",s:"s",c:"#8a3a1c",ph:7,cat:"氧化物",g:"🪨",d:"铁红/赤铁矿，红棕色。铝热反应原料，可被CO/Al还原。"});
+def("Fe3O4",{n:"四氧化三铁",f:"Fe₃O₄",s:"s",c:"#1c1c1c",ph:7,cat:"氧化物",g:"🪨",d:"磁性氧化铁，黑色，铁在O₂中燃烧的产物。"});
+def("Al2O3",{n:"氧化铝",f:"Al₂O₃",s:"s",c:"#f2f0e8",ph:7,cat:"两性",g:"🪨",d:"两性氧化物（刚玉），熔点高，溶于强酸强碱。"});
+def("MgO",{n:"氧化镁",f:"MgO",s:"s",c:"#f5f3e8",ph:10,cat:"氧化物",g:"🪨",d:"白色，熔点高，耐火材料。"});
+def("Na2O2",{n:"过氧化钠",f:"Na₂O₂",s:"s",c:"#f0e6d2",ph:12,cat:"氧化物",g:"🪨",d:"淡黄色，与水/CO₂反应放出O₂（供氧剂、漂白剂）。"});
+def("Na2O",{n:"氧化钠",f:"Na₂O",s:"s",c:"#f5f0e8",ph:12,cat:"氧化物",g:"🪨",d:"白色碱性氧化物，与水生成NaOH。"});
+def("MnO2",{n:"二氧化锰",f:"MnO₂",s:"s",c:"#3a3a3a",ph:7,cat:"氧化物",g:"🪨",d:"黑色粉末，催化剂（KClO₃制O₂、浓HCl制Cl₂），也是氧化剂。"});
+def("SiO2",{n:"二氧化硅",f:"SiO₂",s:"s",c:"#f7f6f2",ph:7,cat:"氧化物",g:"🪨",d:"石英/沙子，酸性氧化物，只与HF反应。光导纤维原料。"});
+def("CO2",{n:"二氧化碳",f:"CO₂",s:"g",c:"#dde7ea",ph:4,cat:"氧化物",g:"💨",d:"密度>空气，不燃烧不助燃，使澄清石灰水变浑浊。"});
+def("CO",{n:"一氧化碳",f:"CO",s:"g",c:"#bfc6c9",ph:7,cat:"氧化物",g:"💨",d:"剧毒，蓝色火焰，还原性（炼铁：还原Fe₂O₃）。"});
+def("SO2",{n:"二氧化硫",f:"SO₂",s:"g",c:"#dbe8b0",ph:2,cat:"氧化物",g:"💨",d:"刺激性气味有毒，酸性氧化物，使品红褪色（加热恢复）。"});
+def("NO2",{n:"二氧化氮",f:"NO₂",s:"g",c:"#c44a1c",ph:1,cat:"氧化物",g:"🟠",d:"红棕色有毒，与水反应生成HNO₃和NO。"});
+def("NO",{n:"一氧化氮",f:"NO",s:"g",c:"#e8eef2",ph:7,cat:"氧化物",g:"💨",d:"无色，遇空气立即变红棕色NO₂。"});
+def("NH3",{n:"氨气",f:"NH₃",s:"g",c:"#e6f2ea",ph:11,cat:"非金属",g:"💨",d:"刺激性气味，极易溶于水（喷泉实验），遇HCl产生白烟。"});
+def("HClg",{n:"氯化氢",f:"HCl(g)",s:"g",c:"#e8f0f5",ph:1,cat:"酸",g:"💨",d:"极易溶于水，遇水蒸气形成白雾，与NH₃产生白烟。"});
+def("H2S",{n:"硫化氢",f:"H₂S",s:"g",c:"#dde7ea",ph:4,cat:"氧化物",g:"💨",d:"臭鸡蛋气味有毒气体，还原性。"});
+/* ---- 盐 ---- */
+def("NaCl",{n:"氯化钠",f:"NaCl",s:"s",c:"#f7f3ee",ph:7,cat:"盐",g:"🧂",d:"食盐。与AgNO₃生成不溶于稀HNO₃的白色AgCl沉淀。"});
+def("Na2CO3",{n:"碳酸钠",f:"Na₂CO₃",s:"s",c:"#f2eee6",ph:11,cat:"盐",g:"🧂",d:"纯碱/苏打，水溶液碱性（酚酞变红），与酸放CO₂。"});
+def("NaHCO3",{n:"碳酸氢钠",f:"NaHCO₃",s:"s",c:"#f5f1eb",ph:8,cat:"盐",g:"🧂",d:"小苏打，受热分解出CO₂，与酸反应比Na₂CO₃更剧烈。"});
+def("CaCO3",{n:"碳酸钙",f:"CaCO₃",s:"s",c:"#e8e2d3",ph:7,cat:"盐",g:"🪨",d:"石灰石/大理石/贝壳，难溶，与酸放CO₂，高温分解为CaO。"});
+def("CuSO4",{n:"硫酸铜",f:"CuSO₄",s:"s",c:"#e8f0f5",ph:4,cat:"盐",g:"🧂",d:"无水白色（吸水变蓝，检验水），遇水变蓝。"});
+def("CuSO4sol",{n:"CuSO₄溶液",f:"CuSO₄",s:"aq",c:"#2f8fef",ph:4,cat:"盐",g:"🧴",d:"蓝色溶液（Cu²⁺）。与NaOH生成蓝色沉淀，与BaCl₂生成白色沉淀。"});
+def("CuSO45",{n:"胆矾",f:"CuSO₄·5H₂O",s:"s",c:"#2f6fc8",ph:4,cat:"盐",g:"🧊",d:"蓝色晶体，加热失去结晶水变白色。"});
+def("FeCl3",{n:"FeCl₃溶液",f:"FeCl₃",s:"aq",c:"#c87a1a",ph:2,cat:"盐",g:"🧴",d:"棕黄色（Fe³⁺）。与KSCN变血红色，与NaOH生成红褐色沉淀，能氧化KI。"});
+def("FeCl2",{n:"FeCl₂溶液",f:"FeCl₂",s:"aq",c:"#3a6a8a",ph:4,cat:"盐",g:"🧴",d:"浅绿色（Fe²⁺）。与NaOH生成白色沉淀迅速变灰绿→红褐。"});
+def("FeSO4",{n:"FeSO₄溶液",f:"FeSO₄",s:"aq",c:"#3a7a5a",ph:4,cat:"盐",g:"🧴",d:"浅绿色，易被空气中O₂氧化为Fe³⁺（加铁粉防氧化）。"});
+def("AgNO3",{n:"AgNO₃溶液",f:"AgNO₃",s:"aq",c:"#f0f5f5",ph:6,cat:"盐",g:"🧴",d:"检验Cl⁻/Br⁻/I⁻：AgCl白、AgBr淡黄、AgI黄，均不溶于稀HNO₃。"});
+def("BaCl2",{n:"BaCl₂溶液",f:"BaCl₂",s:"aq",c:"#eaf2f5",ph:7,cat:"盐",g:"🧴",d:"检验SO₄²⁻：生成不溶于酸的白色BaSO₄沉淀。"});
+def("KSCN",{n:"KSCN溶液",f:"KSCN",s:"aq",c:"#f5f5f0",ph:7,cat:"盐",g:"🧴",d:"检验Fe³⁺：溶液变血红色（生成Fe(SCN)₃）。"});
+def("KI",{n:"KI溶液",f:"KI",s:"aq",c:"#f7f5f0",ph:7,cat:"盐",g:"🧴",d:"被Cl₂/Br₂/Fe³⁺氧化析出I₂，遇淀粉变蓝。"});
+def("KBr",{n:"KBr溶液",f:"KBr",s:"aq",c:"#f7f5f0",ph:7,cat:"盐",g:"🧴",d:"被Cl₂氧化析出Br₂（溶液变橙黄色）。"});
+def("KMnO4",{n:"KMnO₄溶液",f:"KMnO₄",s:"aq",c:"#9a2bb8",ph:6,cat:"盐",g:"🧴",d:"紫红色，强氧化剂。酸性条件下被还原为无色Mn²⁺（褪色）。"});
+def("K2Cr2O7",{n:"K₂Cr₂O₇溶液",f:"K₂Cr₂O₇",s:"aq",c:"#e8a83a",ph:4,cat:"盐",g:"🧴",d:"橙色，强氧化剂，被还原为绿色Cr³⁺。"});
+def("KClO3",{n:"氯酸钾",f:"KClO₃",s:"s",c:"#f5f5f0",ph:7,cat:"盐",g:"🧂",d:"与MnO₂混合加热制O₂（本实验安全演示）。"});
+def("NaClO",{n:"NaClO溶液",f:"NaClO",s:"aq",c:"#eef4ee",ph:12,cat:"盐",g:"🧴",d:"84消毒液有效成分，强氧化性漂白。与酸混合放Cl₂（危险！）。"});
+def("bleach",{n:"漂白粉",f:"Ca(ClO)₂",s:"s",c:"#f5f5f0",ph:10,cat:"盐",g:"🧂",d:"有效成分Ca(ClO)₂，遇酸或CO₂+H₂O生成HClO而漂白。"});
+def("Na2SiO3",{n:"硅酸钠溶液",f:"Na₂SiO₃",s:"aq",c:"#f2eee6",ph:11,cat:"盐",g:"🧴",d:"水玻璃，与强酸反应析出硅酸凝胶（白胶状）。"});
+def("Na2SO3",{n:"亚硫酸钠",f:"Na₂SO₃",s:"s",c:"#f2eee6",ph:9,cat:"盐",g:"🧂",d:"遇强酸放SO₂；有还原性，能使KMnO₄褪色。"});
+def("Na2S2O3",{n:"硫代硫酸钠",f:"Na₂S₂O₃",s:"aq",c:"#eef2e6",ph:8,cat:"盐",g:"🧴",d:"大苏打/海波，与酸反应析出S（乳白色浑浊）和SO₂。"});
+def("CaCl2",{n:"CaCl₂溶液",f:"CaCl₂",s:"aq",c:"#eaf2f5",ph:7,cat:"盐",g:"🧴",d:"与Na₂CO₃生成白色CaCO₃沉淀。"});
+def("Al2S3",{n:"Al₂(SO₄)₃",f:"Al₂(SO₄)₃",s:"aq",c:"#eaf2f5",ph:3,cat:"盐",g:"🧴",d:"与氨水生成Al(OH)₃白色胶状沉淀（不溶于过量氨水）。"});
+def("NH4Cl",{n:"氯化铵",f:"NH₄Cl",s:"s",c:"#f5f3ee",ph:5,cat:"盐",g:"🧂",d:"铵盐，与碱共热放出NH₃；受热分解为NH₃和HCl（冷却又结合成白烟）。"});
+def("Na2SO4",{n:"Na₂SO₄溶液",f:"Na₂SO₄",s:"aq",c:"#eaf2f5",ph:7,cat:"盐",g:"🧴",d:"含SO₄²⁻，与BaCl₂生成白色BaSO₄沉淀。"});
+def("ZnSO4",{n:"ZnSO₄溶液",f:"ZnSO₄",s:"aq",c:"#eaf2f5",ph:5,cat:"盐",g:"🧴",d:"无色溶液。"});
+def("MgCl2",{n:"MgCl₂溶液",f:"MgCl₂",s:"aq",c:"#eaf2f5",ph:6,cat:"盐",g:"🧴",d:"与NaOH生成白色Mg(OH)₂沉淀。"});
+def("PbNO3",{n:"Pb(NO₃)₂",f:"Pb(NO₃)₂",s:"aq",c:"#f0f5f5",ph:5,cat:"盐",g:"🧴",d:"与I⁻生成黄色PbI₂沉淀。"});
+def("FeS",{n:"硫化亚铁",f:"FeS",s:"s",c:"#3a3a4a",ph:7,cat:"盐",g:"🪨",d:"黑色固体，与酸反应放出H₂S。实验室制H₂S。"});
+def("CaC2",{n:"电石",f:"CaC₂",s:"s",c:"#3a3a3a",ph:7,cat:"盐",g:"🪨",d:"与水剧烈反应生成乙炔C₂H₂。"});
+def("AgCl",{n:"氯化银",f:"AgCl",s:"s",c:"#f5f5f5",ph:7,cat:"盐",g:"🪨",d:"白色沉淀，不溶于稀HNO₃，见光分解变黑。"});
+def("AgBr",{n:"溴化银",f:"AgBr",s:"s",c:"#f0e6c8",ph:7,cat:"盐",g:"🪨",d:"淡黄色沉淀，感光分解，用于照相底片。"});
+def("AgI",{n:"碘化银",f:"AgI",s:"s",c:"#e8d8a0",ph:7,cat:"盐",g:"🪨",d:"黄色沉淀，用于人工降雨。"});
+def("BaSO4",{n:"硫酸钡",f:"BaSO₄",s:"s",c:"#f7f7f5",ph:7,cat:"盐",g:"🪨",d:"白色沉淀，不溶于酸，X射线造影剂（钡餐）。"});
+def("CaSO4",{n:"硫酸钙",f:"CaSO₄",s:"s",c:"#f5f5f0",ph:7,cat:"盐",g:"🪨",d:"白色微溶，石膏CaSO₄·2H₂O。"});
+def("KAlSO4",{n:"明矾",f:"KAl(SO₄)₂·12H₂O",s:"s",c:"#f5f5f0",ph:3,cat:"盐",g:"🧊",d:"溶于水生成Al(OH)₃胶体，吸附悬浮物净水。"});
+/* ---- 指示剂 ---- */
+def("litmus",{n:"紫色石蕊",f:"石蕊",s:"aq",c:"#c9a8e8",ph:7,cat:"指示剂",g:"🧪",d:"酸红、碱蓝、中性紫。"});
+def("phth",{n:"酚酞",f:"酚酞",s:"aq",c:"#f5f5f0",ph:7,cat:"指示剂",g:"🧴",d:"酸/中性无色，碱变红。"});
+def("morange",{n:"甲基橙",f:"甲基橙",s:"aq",c:"#f5c8a0",ph:7,cat:"指示剂",g:"🧴",d:"酸红、碱黄。"});
+def("starch",{n:"淀粉溶液",f:"淀粉",s:"aq",c:"#f7f3e6",ph:7,cat:"指示剂",g:"🧴",d:"遇I₂变蓝（特征反应，互相检验）。"});
+def("wetlitmus_r",{n:"湿润红色石蕊试纸",f:"试纸",s:"s",c:"#e84a5f",ph:4,cat:"指示剂",g:"🧻",d:"遇碱性气体（NH₃）变蓝。"});
+def("wetlitmus_b",{n:"湿润蓝色石蕊试纸",f:"试纸",s:"s",c:"#4a6fe8",ph:9,cat:"指示剂",g:"🧻",d:"遇酸性气体（HCl、Cl₂等）变红。"});
+def("magenta",{n:"品红溶液",f:"品红",s:"aq",c:"#e84a8a",ph:7,cat:"指示剂",g:"🧴",d:"被SO₂褪色（加热又恢复），检验SO₂。"});
+/* ---- 有机物 & 其他 ---- */
+def("CH4",{n:"甲烷",f:"CH₄",s:"g",c:"#eef2f5",ph:7,cat:"其他",g:"💨",d:"天然气主要成分，淡蓝色火焰，与Cl₂光照取代。"});
+def("C2H4",{n:"乙烯",f:"C₂H₄",s:"g",c:"#eef5ee",ph:7,cat:"其他",g:"💨",d:"能使KMnO₄褪色、Br₂水褪色（加成反应）。"});
+def("C2H2",{n:"乙炔",f:"C₂H₂",s:"g",c:"#f5f0e8",ph:7,cat:"其他",g:"💨",d:"电石+水生成，燃烧明亮火焰带浓烟（氧炔焰）。"});
+def("C2H5OH",{n:"乙醇",f:"C₂H₅OH",s:"l",c:"#f7f5ef",ph:7,cat:"其他",g:"🧪",d:"酒精，淡蓝色火焰，与Na反应放H₂。"});
+def("glucose",{n:"葡萄糖",f:"C₆H₁₂O₆",s:"s",c:"#f7f5ef",ph:7,cat:"其他",g:"🧂",d:"含醛基，与新制Cu(OH)₂共热生成砖红色Cu₂O。"});
+def("phenol",{n:"苯酚",f:"C₆H₅OH",s:"s",c:"#f5f0e8",ph:6,cat:"其他",g:"🧪",d:"石炭酸，弱酸性。遇FeCl₃显紫色，与浓溴水生成白色沉淀。"});
+def("sucrose",{n:"蔗糖",f:"C₁₂H₂₂O₁₁",s:"s",c:"#f7f5ef",ph:7,cat:"其他",g:"🧂",d:"被浓H₂SO₄脱水炭化（黑面包实验）。"});
+def("dryice",{n:"干冰",f:"CO₂(s)",s:"s",c:"#f5f5fa",ph:7,cat:"其他",g:"🧊",d:"固态CO₂，-78℃升华吸热，使水蒸气凝结成白雾。"});
+def("H2O2",{n:"过氧化氢",f:"H₂O₂",s:"aq",c:"#eaf6f5",ph:5,cat:"其他",g:"🧴",d:"双氧水，强氧化性/还原性，MnO₂催化分解出O₂。"});
+def("kero",{n:"煤油",f:"—",s:"l",c:"#d8c8a0",ph:7,cat:"其他",g:"🧪",d:"保存钠、钾的液体，隔绝空气和水。"});
+
+
+/* ============ 反应规则库 ============
+   字段说明：
+   req   必须同时存在的物质
+   cat   催化剂（不消耗）
+   need  触发条件 fire点燃/heat加热(≥100℃)/light光照/elec通电
+   tmin  最低温度
+   con   被消耗的物质（默认=req）
+   pro   生成的物质
+   liquid 反应后液体颜色
+   eq    化学方程式   ion 离子方程式
+   ph    现象数组     fx 特效
+   tp    反应类型     tip 考点
+   lv    normal/warn/danger
+*/
+const RX=[];
+function rx(o){RX.push(o)};
+
+/* ===== 一、钠及其化合物 ===== */
+rx({req:["Na","H2O"],pro:["NaOH","H2"],eq:"2Na + 2H₂O = 2NaOH + H₂↑",
+ ion:"2Na + 2H₂O = 2Na⁺ + 2OH⁻ + H₂↑",tp:"置换反应（氧化还原）",lv:"danger",
+ ph:["钠浮在水面上（密度比水小）","熔化成闪亮小球（反应放热、熔点低）","四处游动并发出嘶嘶声","滴加酚酞后溶液变红"],
+ fx:{gas:3,boom:1,flame:"#ffd27f",fog:1,heat:60},liquid:"#ffb8d8",
+ tip:"★必考「浮、熔、游、响、红」五字诀。钠必须保存在煤油中；着火时用沙土扑灭，不能用水/泡沫灭火器。"});
+
+rx({req:["K","H2O"],pro:["KOH","H2"],eq:"2K + 2H₂O = 2KOH + H₂↑",tp:"置换反应",lv:"danger",
+ ph:["比钠反应更剧烈，立即燃烧","发出紫色火焰（钾的焰色）","轻微爆炸"],
+ fx:{gas:3,boom:2,flame:"#c77dff",fog:1},
+ tip:"钾比钠活泼，反应更剧烈，生成的H₂能被直接点燃，火焰呈紫色（透过蓝色钴玻璃看）。"});
+
+rx({req:["Na","O2"],need:"fire",pro:["Na2O2"],eq:"2Na + O₂ =(点燃) Na₂O₂",tp:"化合反应",lv:"danger",
+ ph:["钠先熔化后燃烧","发出黄色火焰","生成淡黄色固体Na₂O₂"],
+ fx:{flame:"#ffcc33",boom:1,smoke:"#f0e6d2",light:1},
+ tip:"钠在空气中常温氧化生成白色Na₂O，点燃/加热才生成淡黄色Na₂O₂。钠的焰色为黄色。"});
+
+rx({req:["Na","Cl2"],need:"fire",pro:["NaCl"],eq:"2Na + Cl₂ =(点燃) 2NaCl",tp:"化合反应",lv:"danger",
+ ph:["钠在氯气中剧烈燃烧","黄色火焰","产生大量白烟（NaCl固体小颗粒）"],
+ fx:{flame:"#ffcc33",smoke:"#ffffff",boom:1},
+ tip:"★经典实验：钠在Cl₂中燃烧产生白烟。说明燃烧不一定需要O₂。"});
+
+rx({req:["Na2O2","H2O"],pro:["NaOH","O2"],eq:"2Na₂O₂ + 2H₂O = 4NaOH + O₂↑",tp:"氧化还原（歧化）",lv:"warn",
+ ph:["剧烈反应，大量气泡","试管发烫（放热）","带火星木条复燃（生成O₂）","滴酚酞先变红后褪色（Na₂O₂漂白性）"],
+ fx:{gas:3,heat:70,fog:1},liquid:"#ff9ec4",
+ tip:"★Na₂O₂既是氧化剂又是还原剂（O从-1→0和-2）。呼出气面具/潜水艇供氧剂，也作漂白剂。滴酚酞「先变红后褪色」是考点陷阱。"});
+
+rx({req:["Na2O2","CO2"],pro:["Na2CO3","O2"],eq:"2Na₂O₂ + 2CO₂ = 2Na₂CO₃ + O₂",tp:"氧化还原（歧化）",
+ ph:["淡黄色固体逐渐变白","有气体放出（O₂）","放热"],
+ fx:{gas:2,heat:40},
+ tip:"用于呼吸面具/潜艇：吸收CO₂同时放出O₂。注意与Na₂O(只生成Na₂CO₃不放O₂)区分。"});
+
+rx({req:["Na2CO3","HCl"],pro:["NaCl","CO2"],eq:"Na₂CO₃ + 2HCl = 2NaCl + H₂O + CO₂↑",
+ ion:"CO₃²⁻ + 2H⁺ = H₂O + CO₂↑",tp:"复分解反应",
+ ph:["固体/溶液中有大量气泡冒出（CO₂）","固体逐渐溶解消失"],
+ fx:{gas:2},liquid:"#eaf2f5",
+ tip:"★检验CO₃²⁻：加酸产气，气体通入澄清石灰水变浑浊。注意NaHCO₃与酸反应更剧烈更快。"});
+
+rx({req:["Na2CO3","H2SO4d"],pro:["Na2SO4","CO2"],eq:"Na₂CO₃ + H₂SO₄ = Na₂SO₄ + H₂O + CO₂↑",
+ ion:"CO₃²⁻ + 2H⁺ = H₂O + CO₂↑",tp:"复分解反应",
+ ph:["剧烈冒泡","有无色无味气体生成"],
+ fx:{gas:3},liquid:"#eaf2f5",
+ tip:"强酸制弱酸（H₂SO₄→H₂CO₃）。"});
+
+rx({req:["NaHCO3","HCl"],pro:["NaCl","CO2"],eq:"NaHCO₃ + HCl = NaCl + H₂O + CO₂↑",
+ ion:"HCO₃⁻ + H⁺ = H₂O + CO₂↑",tp:"复分解反应",
+ ph:["立即剧烈冒泡，比Na₂CO₃更快更剧烈"],
+ fx:{gas:3},liquid:"#eaf2f5",
+ tip:"★对比：NaHCO₃与酸反应比Na₂CO₃剧烈。这也是发酵粉、胃药（中和胃酸）原理。"});
+
+rx({req:["NaHCO3"],need:"heat",pro:["Na2CO3","CO2","H2O"],eq:"2NaHCO₃ =(Δ) Na₂CO₃ + H₂O + CO₂↑",tp:"分解反应",
+ ph:["试管口有水珠","有气体放出，通入石灰水变浑浊","固体质量减少"],
+ fx:{gas:2,fog:1},
+ tip:"★热稳定性：Na₂CO₃ > NaHCO₃。用加热法可除去Na₂CO₃中混有的NaHCO₃。试管口要略向下倾斜。"});
+
+rx({req:["Na2CO3","CaOH2"],pro:["CaCO3","NaOH"],eq:"Na₂CO₃ + Ca(OH)₂ = CaCO₃↓ + 2NaOH",
+ ion:"Ca²⁺ + CO₃²⁻ = CaCO₃↓",tp:"复分解反应",
+ ph:["立即产生白色沉淀（溶液变浑浊）"],
+ fx:{precip:"#f5f5ee"},liquid:"#eaf6f0",
+ tip:"★纯碱制烧碱（侯氏制碱法中间步骤）。也是除去CO₃²⁻、检验Ca²⁺的反应。"});
+
+rx({req:["Na2CO3","CaCl2"],pro:["CaCO3","NaCl"],eq:"Na₂CO₃ + CaCl₂ = CaCO₃↓ + 2NaCl",
+ ion:"Ca²⁺ + CO₃²⁻ = CaCO₃↓",tp:"复分解反应",
+ ph:["产生白色沉淀"],fx:{precip:"#f5f5ee"},
+ tip:"★Na₂CO₃与CaCl₂生成沉淀，而NaHCO₃与CaCl₂不反应（常温）——可用于鉴别Na₂CO₃和NaHCO₃！"});
+
+rx({req:["Na2CO3","phth"],pro:["Na2CO3","phth"],eq:"CO₃²⁻ + H₂O ⇌ HCO₃⁻ + OH⁻（水解）",tp:"盐类水解",
+ ph:["溶液变红（Na₂CO₃水解显碱性）"],fx:{color:"#ff7fa8"},liquid:"#ff7fa8",
+ tip:"★纯碱不是碱是盐！因水解显碱性，酚酞变红。同浓度碱性：Na₂CO₃ > NaHCO₃。"});
+
+rx({req:["Na2CO3","litmus"],pro:["Na2CO3","litmus"],eq:"CO₃²⁻水解使溶液显碱性",tp:"盐类水解",
+ ph:["紫色石蕊变蓝"],fx:{color:"#6a8fe8"},liquid:"#6a8fe8",
+ tip:"碳酸钠俗称纯碱/苏打，水溶液可使石蕊变蓝。"});
+
+rx({req:["Na2CO3","CO2","H2O"],pro:["NaHCO3"],eq:"Na₂CO₃ + CO₂ + H₂O = 2NaHCO₃",tp:"化合反应",
+ ph:["溶液变浑浊（NaHCO₃溶解度较小，析出晶体）"],fx:{precip:"#f5f1eb"},
+ tip:"★侯氏制碱法核心反应。也解释：饱和Na₂CO₃中通CO₂会析出NaHCO₃晶体。"});
+
+/* ===== 二、氯气及卤素 ===== */
+rx({req:["MnO2","HCl"],need:"heat",cat:"MnO2",con:["MnO2","HCl"],pro:["Cl2","MnCl2"],
+ eq:"MnO₂ + 4HCl(浓) =(Δ) MnCl₂ + Cl₂↑ + 2H₂O",tp:"氧化还原",lv:"warn",
+ ph:["有黄绿色刺激性气味气体产生","溶液由浓盐酸无色变为浅绿色（Mn²⁺）","加热后反应剧烈"],
+ fx:{gas:2,smoke:"#7fcf7f"},liquid:"#9ecf9e",
+ tip:"★实验室制Cl₂（必修一重点）。MnO₂作催化剂？不，MnO₂是氧化剂（反应物）！必须用浓盐酸，稀盐酸不反应。尾气用NaOH吸收。"});
+
+rx({req:["Cl2","H2O"],pro:["HCl","HClO"],eq:"Cl₂ + H₂O ⇌ HCl + HClO",tp:"氧化还原（歧化）",
+ ph:["氯水呈浅黄绿色","有漂白作用（HClO）","久置氯水变成稀盐酸（HClO分解）"],
+ fx:{color:"#cfe8c8"},liquid:"#cfe8c8",
+ tip:"★氯水成分「三分子四离子」：Cl₂、H₂O、HClO、H⁺、Cl⁻、ClO⁻、OH⁻。HClO有强氧化性可漂白，见光分解2HClO=2HCl+O₂↑。"});
+
+rx({req:["Cl2","NaOH"],pro:["NaCl","NaClO"],eq:"Cl₂ + 2NaOH = NaCl + NaClO + H₂O",
+ ion:"Cl₂ + 2OH⁻ = Cl⁻ + ClO⁻ + H₂O",tp:"氧化还原（歧化）",
+ ph:["黄绿色气体被吸收，颜色褪去","得到无色溶液（84消毒液）"],
+ fx:{color:"#eef4ee"},liquid:"#eef4ee",
+ tip:"★工业制漂白液（84消毒液）。Cl₂尾气必须用NaOH吸收，不能用Ca(OH)₂（浓度太低）。"});
+
+rx({req:["Cl2","CaOH2s"],pro:["bleach","CaCl2"],eq:"2Cl₂ + 2Ca(OH)₂ = CaCl₂ + Ca(ClO)₂ + 2H₂O",tp:"氧化还原（歧化）",
+ ph:["黄绿色气体被吸收","生成白色漂白粉"],
+ fx:{smoke:"#ffffff"},
+ tip:"★工业制漂白粉：用石灰乳（不用澄清石灰水，浓度太低）。有效成分Ca(ClO)₂，主要成分CaCl₂+Ca(ClO)₂。"});
+
+rx({req:["bleach","HCl"],pro:["Cl2","CaCl2"],eq:"Ca(ClO)₂ + 4HCl = CaCl₂ + 2Cl₂↑ + 2H₂O",tp:"氧化还原",lv:"danger",
+ ph:["立即产生黄绿色有毒气体","剧烈冒泡"],
+ fx:{gas:3,smoke:"#7fcf7f",boom:1},
+ tip:"★⚠️漂白粉/84消毒液与洁厕灵（HCl）混用会产生有毒Cl₂！生活中严禁混用。归中反应：ClO⁻+Cl⁻+2H⁺=Cl₂+H₂O。"});
+
+rx({req:["NaClO","HCl"],pro:["Cl2","NaCl"],eq:"NaClO + 2HCl = NaCl + Cl₂↑ + H₂O",tp:"氧化还原",lv:"danger",
+ ph:["产生黄绿色有毒气体Cl₂","有刺激性气味"],
+ fx:{gas:3,smoke:"#7fcf7f",boom:1},
+ tip:"★⚠️84消毒液+洁厕灵=致命毒气！归中反应。高考实验安全高频考点。"});
+
+rx({req:["bleach","CO2","H2O"],pro:["CaCO3","HClO"],eq:"Ca(ClO)₂ + CO₂ + H₂O = CaCO₃↓ + 2HClO",tp:"复分解反应",
+ ph:["白色沉淀生成","生成HClO，具有漂白性"],
+ fx:{precip:"#f5f5ee"},
+ tip:"★漂白粉在空气中失效/生效原理：酸性H₂CO₃ > HClO，强酸制弱酸。所以漂白粉要密封保存。"});
+
+rx({req:["Cl2","KI"],pro:["I2","KCl"],eq:"Cl₂ + 2KI = 2KCl + I₂",ion:"Cl₂ + 2I⁻ = 2Cl⁻ + I₂",tp:"置换反应",
+ ph:["无色溶液变为褐色/棕黄色（析出I₂）","若加淀粉则变蓝"],
+ fx:{color:"#8a5a1c"},liquid:"#a06a2a",
+ tip:"★氧化性Cl₂ > Br₂ > I₂。用此反应检验Cl₂（湿润淀粉-KI试纸变蓝）。"});
+
+rx({req:["Cl2","KBr"],pro:["Br2","KCl"],eq:"Cl₂ + 2KBr = 2KCl + Br₂",ion:"Cl₂ + 2Br⁻ = 2Cl⁻ + Br₂",tp:"置换反应",
+ ph:["无色溶液变为橙黄色（Br₂）"],fx:{color:"#c86a20"},liquid:"#c86a20",
+ tip:"★卤素单质氧化性：Cl₂>Br₂>I₂，对应阴离子还原性：I⁻>Br⁻>Cl⁻。"});
+
+rx({req:["Br2","KI"],pro:["I2","KBr"],eq:"Br₂ + 2KI = 2KBr + I₂",tp:"置换反应",
+ ph:["溶液颜色加深变为褐色"],fx:{color:"#8a5a1c"},liquid:"#a06a2a",
+ tip:"Br₂能置换出I₂，证明氧化性Br₂>I₂。"});
+
+rx({req:["Cl2","FeCl2"],pro:["FeCl3"],eq:"Cl₂ + 2FeCl₂ = 2FeCl₃",ion:"Cl₂ + 2Fe²⁺ = 2Cl⁻ + 2Fe³⁺",tp:"氧化还原",
+ ph:["浅绿色溶液变为棕黄色"],fx:{color:"#c87a1a"},liquid:"#c87a1a",
+ tip:"★Cl₂氧化Fe²⁺。保存FeCl₂溶液要加铁粉防止氧化：2Fe³⁺+Fe=3Fe²⁺。"});
+
+rx({req:["Cl2","H2"],need:"fire",pro:["HClg"],eq:"H₂ + Cl₂ =(点燃) 2HCl",tp:"化合反应",lv:"danger",
+ ph:["氢气在氯气中安静燃烧","发出苍白色火焰","瓶口有白雾（HCl遇水蒸气）"],
+ fx:{flame:"#eaf6ff",fog:2,boom:1},
+ tip:"★H₂在Cl₂中燃烧是苍白色火焰（不是淡蓝色！）。若混合后光照则爆炸。工业制盐酸。"});
+
+rx({req:["Cl2","H2"],need:"light",pro:["HClg"],eq:"H₂ + Cl₂ =(光照) 2HCl",tp:"化合反应",lv:"danger",
+ ph:["混合气体见光发生爆炸","瓶口有白雾"],
+ fx:{boom:3,flash:1,fog:2},
+ tip:"★H₂和Cl₂混合光照爆炸，所以工业制盐酸是「点燃」不是「光照」。"});
+
+rx({req:["HClO"],need:"light",pro:["HCl","O2"],eq:"2HClO =(光照) 2HCl + O₂↑",tp:"分解反应",
+ ph:["有气泡产生（O₂）","氯水颜色逐渐变浅至无色","漂白性消失"],
+ fx:{gas:2},liquid:"#eaf2f5",
+ tip:"★解释氯水为何要现配现用、棕色瓶保存。久置氯水最终变成稀盐酸。"});
+
+rx({req:["AgNO3","NaCl"],con:["AgNO3","NaCl"],pro:["AgCl"],eq:"AgNO₃ + NaCl = AgCl↓ + NaNO₃",
+ ion:"Ag⁺ + Cl⁻ = AgCl↓",tp:"复分解反应",
+ ph:["立即产生白色沉淀","加稀HNO₃沉淀不溶解"],
+ fx:{precip:"#ffffff"},
+ tip:"★检验Cl⁻：先加稀HNO₃酸化，再加AgNO₃，白色沉淀不溶于稀HNO₃。加稀HNO₃是为了排除CO₃²⁻等干扰。"});
+
+rx({req:["AgNO3","KBr"],pro:["AgBr"],eq:"AgNO₃ + KBr = AgBr↓ + KNO₃",ion:"Ag⁺ + Br⁻ = AgBr↓",tp:"复分解反应",
+ ph:["产生淡黄色沉淀","不溶于稀HNO₃"],fx:{precip:"#f0e6c8"},
+ tip:"AgCl白、AgBr淡黄、AgI黄，且都不溶于稀HNO₃。AgBr感光用于照相底片。"});
+
+rx({req:["AgNO3","KI"],pro:["AgI"],eq:"AgNO₃ + KI = AgI↓ + KNO₃",ion:"Ag⁺ + I⁻ = AgI↓",tp:"复分解反应",
+ ph:["产生黄色沉淀","不溶于稀HNO₃"],fx:{precip:"#e8d8a0"},
+ tip:"AgI黄色，可用于人工降雨（作冰核）。卤化银沉淀颜色是必记考点。"});
+
+rx({req:["AgCl"],need:"light",pro:["Ag"],eq:"2AgCl =(光照) 2Ag + Cl₂↑",tp:"分解反应",
+ ph:["白色沉淀逐渐变灰黑色（析出Ag）"],fx:{color:"#555555"},
+ tip:"★AgCl见光分解变黑，所以AgNO₃要保存在棕色试剂瓶中。这也是照相术的原理。"});
+
+/* ===== 三、铁及其化合物 ===== */
+rx({req:["Fe","O2"],need:"fire",pro:["Fe3O4"],eq:"3Fe + 2O₂ =(点燃) Fe₃O₄",tp:"化合反应",lv:"danger",
+ ph:["铁丝剧烈燃烧，火星四射","生成黑色固体","放出大量热"],
+ fx:{spark:1,flame:"#ff9a3c",boom:1,light:1},
+ tip:"★必修一经典实验。集气瓶底部要放少量水或细沙（防止高温熔融物炸裂瓶底）；铁丝末端系火柴引燃；铁丝要绕成螺旋状增大接触面积。"});
+
+rx({req:["Fe","Cl2"],need:"fire",pro:["FeCl3"],eq:"2Fe + 3Cl₂ =(点燃) 2FeCl₃",tp:"化合反应",lv:"danger",
+ ph:["铁丝剧烈燃烧","产生棕黄色烟（FeCl₃固体小颗粒）","加少量水后溶液呈黄色"],
+ fx:{smoke:"#c98a3c",flame:"#ff9a3c",boom:1},liquid:"#c87a1a",
+ tip:"★Cl₂氧化性强，把Fe氧化到+3价（FeCl₃）。对比：Fe与S反应只生成+2价FeS，说明氧化性Cl₂>S。"});
+
+rx({req:["Fe","S"],need:"heat",pro:["FeS"],eq:"Fe + S =(Δ) FeS",tp:"化合反应",lv:"warn",
+ ph:["混合物红热，反应放热","生成黑色固体","移开酒精灯后反应仍继续进行"],
+ fx:{flame:"#ff9a3c",heat:50,smoke:"#3a3a4a"},
+ tip:"★S氧化性弱，只能把Fe氧化到+2价。该反应放热，一旦开始就不需要继续加热（放热反应）。"});
+
+rx({req:["Fe","HCl"],pro:["FeCl2","H2"],eq:"Fe + 2HCl = FeCl₂ + H₂↑",ion:"Fe + 2H⁺ = Fe²⁺ + H₂↑",tp:"置换反应",
+ ph:["铁丝表面有气泡产生","固体逐渐溶解","溶液由无色变为浅绿色（Fe²⁺）"],
+ fx:{gas:2},liquid:"#3a6a8a",
+ tip:"★Fe与稀盐酸/稀硫酸反应生成Fe²⁺（浅绿色），不是Fe³⁺！这是高频易错点。"});
+
+rx({req:["Fe","H2SO4d"],pro:["FeSO4","H2"],eq:"Fe + H₂SO₄ = FeSO₄ + H₂↑",ion:"Fe + 2H⁺ = Fe²⁺ + H₂↑",tp:"置换反应",
+ ph:["有气泡产生","溶液变为浅绿色"],fx:{gas:2},liquid:"#3a7a5a",
+ tip:"Fe与非氧化性酸生成FeSO₄（浅绿）。注意：常温下Fe遇浓硫酸/浓硝酸会钝化。"});
+
+rx({req:["Fe","CuSO4"],pro:["FeSO4","Cu"],eq:"Fe + CuSO₄ = FeSO₄ + Cu",ion:"Fe + Cu²⁺ = Fe²⁺ + Cu",tp:"置换反应",
+ ph:["铁钉表面覆盖一层红色物质（Cu）","蓝色溶液逐渐变为浅绿色","溶液颜色变浅"],
+ fx:{color:"#3a7a5a"},liquid:"#5a8a6a",
+ tip:"★湿法炼铜原理，也是古代「曾青得铁则化为铜」。质量变化：铁溶解质量减小，析出铜质量增大，溶液质量减小。"});
+
+rx({req:["Fe","H2O"],need:"heat",tmin:600,pro:["Fe3O4","H2"],eq:"3Fe + 4H₂O(g) =(高温) Fe₃O₄ + 4H₂",tp:"置换反应",
+ ph:["红热的铁与水蒸气反应","生成黑色固体","有气体产生（H₂，可点燃）"],
+ fx:{gas:2,fog:1,heat:60},
+ tip:"★注意条件是「水蒸气」且「高温」，生成Fe₃O₄不是Fe₂O₃。常温下Fe与水不反应（生锈是电化学腐蚀）。"});
+
+rx({req:["FeCl3","KSCN"],pro:["FeCl3","KSCN"],eq:"Fe³⁺ + 3SCN⁻ ⇌ Fe(SCN)₃（血红色）",tp:"络合反应",
+ ph:["溶液瞬间变为血红色"],fx:{color:"#c0222a"},liquid:"#c0222a",
+ tip:"★检验Fe³⁺的特征反应（血红色）。加KSCN不变红说明无Fe³⁺；若再加氯水后变红，说明原溶液含Fe²⁺。"});
+
+rx({req:["FeCl3","NaOH"],pro:["FeOH3","NaCl"],eq:"FeCl₃ + 3NaOH = Fe(OH)₃↓ + 3NaCl",
+ ion:"Fe³⁺ + 3OH⁻ = Fe(OH)₃↓",tp:"复分解反应",
+ ph:["立即产生红褐色沉淀","像氢氧化铁胶体那样的絮状物"],
+ fx:{precip:"#8a5a2a"},liquid:"#e8b890",
+ tip:"★Fe(OH)₃红褐色沉淀，是Fe³⁺的特征现象。制备Fe(OH)₃胶体：向沸水中滴加饱和FeCl₃溶液，继续煮沸至红褐色（不能过度加热否则聚沉）。"});
+
+rx({req:["FeCl2","NaOH"],pro:["FeOH2","NaCl"],eq:"FeCl₂ + 2NaOH = Fe(OH)₂↓ + 2NaCl",
+ ion:"Fe²⁺ + 2OH⁻ = Fe(OH)₂↓",tp:"复分解反应",
+ ph:["先产生白色沉淀","迅速变为灰绿色","最终变为红褐色"],
+ fx:{precip:"#9ec0a0",color:"#8a5a2a"},liquid:"#8a5a2a",
+ tip:"★必考颜色变化链：白色→灰绿色→红褐色。方程式4Fe(OH)₂+O₂+2H₂O=4Fe(OH)₃。制备时要用煮沸冷却的蒸馏水、胶头滴管伸入液面下，以隔绝O₂。"});
+
+rx({req:["FeOH3"],need:"heat",pro:["Fe2O3","H2O"],eq:"2Fe(OH)₃ =(Δ) Fe₂O₃ + 3H₂O",tp:"分解反应",
+ ph:["红褐色固体变为红棕色粉末","试管口有水珠"],fx:{fog:1,color:"#8a3a1c"},
+ tip:"难溶碱受热分解生成对应氧化物和水（Al(OH)₃、Fe(OH)₃、Cu(OH)₂都如此）。"});
+
+rx({req:["FeCl3","KI"],pro:["FeCl2","I2"],eq:"2FeCl₃ + 2KI = 2FeCl₂ + 2KCl + I₂",
+ ion:"2Fe³⁺ + 2I⁻ = 2Fe²⁺ + I₂",tp:"氧化还原",
+ ph:["溶液由黄色变为褐色","加淀粉溶液变蓝"],
+ fx:{color:"#8a5a1c"},liquid:"#a06a2a",
+ tip:"★氧化性Fe³⁺>I₂。用淀粉-KI试纸检验Fe³⁺变蓝。"});
+
+rx({req:["FeCl3","Fe"],pro:["FeCl2"],eq:"2FeCl₃ + Fe = 3FeCl₂",ion:"2Fe³⁺ + Fe = 3Fe²⁺",tp:"氧化还原（归中）",
+ ph:["黄色溶液逐渐变为浅绿色","铁粉逐渐溶解"],fx:{color:"#3a6a8a"},liquid:"#3a6a8a",
+ tip:"★保存FeCl₂/FeSO₄溶液时加少量铁粉，防止Fe²⁺被氧化为Fe³⁺（归中反应）。"});
+
+rx({req:["FeCl3","Cu"],pro:["FeCl2","CuCl2"],eq:"2FeCl₃ + Cu = 2FeCl₂ + CuCl₂",
+ ion:"2Fe³⁺ + Cu = 2Fe²⁺ + Cu²⁺",tp:"氧化还原",
+ ph:["溶液由黄色变为蓝绿色","铜片逐渐溶解"],fx:{color:"#4a8a6a"},liquid:"#4a8a6a",
+ tip:"★工业上用FeCl₃溶液腐蚀铜制印刷电路板（PCB）！"});
+
+rx({req:["Fe2O3","CO"],need:"heat",tmin:500,pro:["Fe","CO2"],eq:"Fe₂O₃ + 3CO =(高温) 2Fe + 3CO₂",tp:"氧化还原",
+ ph:["红棕色粉末逐渐变为黑色（Fe粉）","有气体生成（通入石灰水变浑浊）","能被磁铁吸引"],
+ fx:{color:"#3a3a3a",gas:1,heat:50},
+ tip:"★工业炼铁原理（高炉）。CO是还原剂。现象要记：红色粉末变黑，澄清石灰水变浑浊，尾气CO要点燃处理（有毒）。"});
+
+rx({req:["Fe2O3","Al"],need:"heat",tmin:800,pro:["Fe","Al2O3"],eq:"Fe₂O₃ + 2Al =(高温) 2Fe + Al₂O₃",tp:"铝热反应",lv:"danger",
+ ph:["剧烈反应，发出耀眼强光","火星四射，纸漏斗被烧穿","熔融的铁珠落入沙中","放出大量热（温度可达2500℃）"],
+ fx:{spark:1,light:2,boom:2,flame:"#fff3c4",smoke:"#c9a86a",heat:100},
+ tip:"★铝热反应（必修一）。引燃剂：镁条+氯酸钾（KClO₃作助燃剂）。应用：焊接钢轨、冶炼难熔金属（V、Cr、Mn）。蒸发皿要垫细沙。"});
+
+rx({req:["Fe3O4","Al"],need:"heat",tmin:800,pro:["Fe","Al2O3"],eq:"3Fe₃O₄ + 8Al =(高温) 9Fe + 4Al₂O₃",tp:"铝热反应",lv:"danger",
+ ph:["剧烈反应，耀眼白光","火星四射，放出大量热"],fx:{spark:1,light:2,boom:2,smoke:"#c9a86a"},
+ tip:"铝热反应可用于焊接钢轨（Fe₂O₃或Fe₃O₄与Al粉）。"});
+
+rx({req:["Fe","HNO3d"],pro:["FeNO3"],eq:"Fe + 4HNO₃(稀) = Fe(NO₃)₃ + NO↑ + 2H₂O",tp:"氧化还原",lv:"warn",
+ ph:["铁溶解，有气泡","无色气体在液面处变红棕色","溶液变黄色"],
+ fx:{gas:2,smoke:"#c44a1c"},liquid:"#c8b040",
+ tip:"★稀HNO₃过量时Fe被氧化到+3价；若Fe过量，则Fe+2Fe³⁺=3Fe²⁺最终生成Fe²⁺。这是易错点！"});
+
+rx({req:["Fe","H2SO4c"],pro:["Fe2O3"],eq:"常温下Fe遇浓H₂SO₄钝化（表面生成致密氧化膜）",tp:"钝化",
+ ph:["无明显现象（表面生成致密氧化膜）","加热后可继续反应放出SO₂"],
+ fx:{},liquid:"#c9a86a",
+ tip:"★钝化是化学变化！常温下Fe、Al遇浓硫酸/浓硝酸钝化，所以可用铁/铝罐车运输浓硫酸、浓硝酸。"});
+
+
+/* ===== 四、铝及其化合物 ===== */
+rx({req:["Al","HCl"],pro:["AlCl3","H2"],eq:"2Al + 6HCl = 2AlCl₃ + 3H₂↑",
+ ion:"2Al + 6H⁺ = 2Al³⁺ + 3H₂↑",tp:"置换反应",lv:"warn",
+ ph:["开始较慢（氧化膜），随后剧烈冒泡","铝片逐渐溶解","放出大量热"],
+ fx:{gas:3,heat:40},liquid:"#eaf2f5",
+ tip:"★等质量Al与足量酸反应放出H₂比Fe、Zn多（Al的摩尔电子质量最小）。铝表面氧化膜需先破坏。"});
+
+rx({req:["Al","NaOH","H2O"],con:["Al","NaOH"],pro:["NaAlO2","H2"],eq:"2Al + 2NaOH + 2H₂O = 2NaAlO₂ + 3H₂↑",
+ ion:"2Al + 2OH⁻ + 2H₂O = 2AlO₂⁻ + 3H₂↑",tp:"氧化还原",lv:"warn",
+ ph:["铝片溶解，产生大量气泡","放出热量","生成无色溶液"],
+ fx:{gas:3,heat:40},liquid:"#eaf2f5",
+ tip:"★金属与碱反应放H₂——只有Al（和Zn）能！这是Al两性的重要体现。注意1mol Al失去3mol e⁻。"});
+
+rx({req:["Al","O2"],need:"fire",pro:["Al2O3"],eq:"4Al + 3O₂ =(点燃) 2Al₂O₃",tp:"化合反应",lv:"danger",
+ ph:["铝箔熔化但不滴落（氧化膜包裹）","发出耀眼白光","生成白色固体"],
+ fx:{flame:"#fff3c4",light:2,boom:1},
+ tip:"★经典：铝箔加热「熔化但不滴落」，因为表面Al₂O₃熔点(2050℃)远高于Al(660℃)，像袋子一样兜住熔化的铝。"});
+
+rx({req:["AlOH3","HCl"],pro:["AlCl3","H2O"],eq:"Al(OH)₃ + 3HCl = AlCl₃ + 3H₂O",
+ ion:"Al(OH)₃ + 3H⁺ = Al³⁺ + 3H₂O",tp:"复分解反应",
+ ph:["白色胶状沉淀逐渐溶解","溶液变澄清"],fx:{dissolve:1},liquid:"#eaf2f5",
+ tip:"两性氢氧化物：既溶于强酸又溶于强碱。Al(OH)₃不溶于氨水（弱碱）！"});
+
+rx({req:["AlOH3","NaOH"],pro:["NaAlO2","H2O"],eq:"Al(OH)₃ + NaOH = NaAlO₂ + 2H₂O",
+ ion:"Al(OH)₃ + OH⁻ = AlO₂⁻ + 2H₂O",tp:"复分解反应",
+ ph:["白色胶状沉淀溶解，溶液变澄清"],fx:{dissolve:1},liquid:"#eaf2f5",
+ tip:"★两性。实验室制Al(OH)₃用Al³⁺+氨水（不用NaOH，因过量NaOH会溶解沉淀）。Al(OH)₃用于治疗胃酸过多。"});
+
+rx({req:["Al2O3","HCl"],pro:["AlCl3","H2O"],eq:"Al₂O₃ + 6HCl = 2AlCl₃ + 3H₂O",tp:"复分解反应",
+ ph:["白色固体溶解"],fx:{dissolve:1},liquid:"#eaf2f5",
+ tip:"Al₂O₃是两性氧化物（刚玉、宝石成分），熔点高作耐火材料。"});
+
+rx({req:["Al2O3","NaOH"],pro:["NaAlO2","H2O"],eq:"Al₂O₃ + 2NaOH = 2NaAlO₂ + H₂O",tp:"复分解反应",
+ ph:["固体逐渐溶解"],fx:{dissolve:1},liquid:"#eaf2f5",
+ tip:"两性氧化物与强碱反应。电解熔融Al₂O₃（加冰晶石降低熔点）制金属铝。"});
+
+rx({req:["Al2S3","NH3H2O"],pro:["AlOH3"],eq:"Al₂(SO₄)₃ + 6NH₃·H₂O = 2Al(OH)₃↓ + 3(NH₄)₂SO₄",
+ ion:"Al³⁺ + 3NH₃·H₂O = Al(OH)₃↓ + 3NH₄⁺",tp:"复分解反应",
+ ph:["产生白色胶状沉淀","氨水过量时沉淀不溶解"],fx:{precip:"#f3f6f3"},liquid:"#eef4f0",
+ tip:"★实验室制Al(OH)₃的最佳方法：Al³⁺ + 氨水。因Al(OH)₃不溶于弱碱（氨水），沉淀不会因过量而溶解。"});
+
+rx({req:["Al2S3","NaOH"],pro:["AlOH3","NaAlO2"],eq:"Al₂(SO₄)₃ + 6NaOH = 2Al(OH)₃↓ + 3Na₂SO₄（NaOH过量则溶解）",tp:"复分解反应",
+ ph:["先产生白色胶状沉淀","继续加NaOH，沉淀又溶解"],
+ fx:{precip:"#f3f6f3",dissolve:1},liquid:"#eaf2f5",
+ tip:"★向Al³⁺中滴加NaOH：先沉淀后溶解（与氨水对比）。反过来向NaOH中滴加Al³⁺：开始无沉淀后有沉淀。"});
+
+rx({req:["KAlSO4","H2O"],pro:["AlOH3"],eq:"KAl(SO₄)₂·12H₂O 溶于水，Al³⁺水解生成Al(OH)₃胶体",tp:"盐类水解",
+ ph:["明矾溶于水形成无色透明溶液","能吸附水中悬浮杂质而净水"],fx:{},liquid:"#eaf2f5",
+ tip:"★明矾净水原理：Al³⁺+3H₂O⇌Al(OH)₃(胶体)+3H⁺，胶体吸附悬浮物。注意明矾只能净水不能杀菌消毒！"});
+
+/* ===== 五、硫及其化合物 ===== */
+rx({req:["S","O2"],need:"fire",pro:["SO2"],eq:"S + O₂ =(点燃) SO₂",tp:"化合反应",lv:"warn",
+ ph:["硫在空气中燃烧发出淡蓝色火焰","在纯氧中燃烧发出明亮的蓝紫色火焰","生成有刺激性气味的气体"],
+ fx:{flame:"#9a6aff",smoke:"#dbe8b0",boom:1},
+ tip:"★现象对比必考：空气中淡蓝色，氧气中蓝紫色。SO₂是酸性氧化物，有毒，是酸雨的元凶之一。"});
+
+rx({req:["SO2","H2O"],pro:["H2SO3"],eq:"SO₂ + H₂O ⇌ H₂SO₃",tp:"化合反应",
+ ph:["气体溶于水","滴入石蕊变红（酸性）","溶液有刺激性气味"],
+ fx:{},liquid:"#e8f0d8",
+ tip:"SO₂溶于水生成亚硫酸（弱酸，中强酸），能使石蕊变红但不能使品红永久褪色。"});
+
+rx({req:["SO2","magenta"],pro:["SO2","magenta"],eq:"SO₂ + 品红 → 无色物质（加热又恢复）",tp:"漂白（化合型）",
+ ph:["品红溶液红色褪去","加热后又恢复红色"],fx:{color:"#f0f0f0"},liquid:"#f2f2f2",
+ tip:"★SO₂漂白是「化合型」（可逆、加热恢复、只漂白某些有色物质）。对比：氯水/HClO/Na₂O₂/H₂O₂是「氧化型」（不可逆）。活性炭是「吸附型」（物理）。三大漂白原理必考！"});
+
+rx({req:["SO2","KMnO4"],pro:["MnSO4"],eq:"5SO₂ + 2KMnO₄ + 2H₂O = K₂SO₄ + 2MnSO₄ + 2H₂SO₄",tp:"氧化还原",
+ ph:["紫红色溶液褪色（Mn²⁺无色）"],fx:{color:"#f0f0f5"},liquid:"#f0f0f5",
+ tip:"★SO₂的还原性：使KMnO₄褪色、使Br₂水褪色、使氯水褪色。注意「褪色」不等于「漂白」！"});
+
+rx({req:["SO2","Br2"],pro:["H2SO4"],eq:"SO₂ + Br₂ + 2H₂O = H₂SO₄ + 2HBr",tp:"氧化还原",
+ ph:["溴水橙黄色褪去"],fx:{color:"#eaf2f5"},liquid:"#eaf2f5",
+ tip:"★SO₂使溴水褪色体现还原性（不是漂白性）。这是区分「还原性褪色」和「漂白性褪色」的经典例子。"});
+
+rx({req:["SO2","Cl2","H2O"],pro:["H2SO4","HCl"],eq:"SO₂ + Cl₂ + 2H₂O = H₂SO₄ + 2HCl",tp:"氧化还原",
+ ph:["黄绿色氯水褪色","漂白能力相互抵消"],fx:{color:"#eaf2f5"},liquid:"#eaf2f5",
+ tip:"★等物质的量SO₂和Cl₂混合后漂白能力消失（「1+1<2」），因为互相反应了。高考常考！"});
+
+rx({req:["Cu","H2SO4c"],need:"heat",pro:["CuSO4","SO2"],eq:"Cu + 2H₂SO₄(浓) =(Δ) CuSO₄ + SO₂↑ + 2H₂O",tp:"氧化还原",lv:"warn",
+ ph:["铜片逐渐溶解","产生有刺激性气味的气体（SO₂）","溶液由无色变为蓝色","品红溶液褪色"],
+ fx:{gas:2,smoke:"#dbe8b0"},liquid:"#2f8fef",
+ tip:"★浓硫酸三大特性之一：强氧化性。生成SO₂不是H₂！体现浓硫酸的「强氧化性+酸性」。试管底部可能有黑色CuO中间产物。 SO₂要用NaOH吸收。"});
+
+rx({req:["C","H2SO4c"],need:"heat",pro:["CO2","SO2"],eq:"C + 2H₂SO₄(浓) =(Δ) CO₂↑ + 2SO₂↑ + 2H₂O",tp:"氧化还原",lv:"warn",
+ ph:["黑色固体逐渐减少","产生大量刺激性气体","品红褪色，石灰水变浑浊"],
+ fx:{gas:3,smoke:"#dbe8b0"},
+ tip:"★体现浓硫酸强氧化性。产物检验顺序：先品红（检SO₂）→ 酸性KMnO₄（除SO₂）→ 品红（检验是否除尽）→ 澄清石灰水（检CO₂）。顺序不能颠倒！"});
+
+rx({req:["sucrose","H2SO4c"],pro:["C"],eq:"C₁₂H₂₂O₁₁ =(浓H₂SO₄) 12C + 11H₂O",tp:"脱水（炭化）",lv:"danger",
+ ph:["白色蔗糖逐渐变黄→棕→黑色","体积膨胀，像黑色面包（多孔蓬松）","放出大量热，有刺激性气味（SO₂）","冒出大量白雾"],
+ fx:{smoke:"#3a3a3a",fog:2,heat:80,boom:1},liquid:"#2b2b2b",
+ tip:"★「黑面包实验」：浓硫酸的脱水性（按2:1脱去H、O）+强氧化性（C被氧化成CO₂，硫酸被还原成SO₂，气体使炭蓬松）。有强腐蚀性，严禁在身上试！"});
+
+rx({req:["CuSO45"],need:"heat",pro:["CuSO4","H2O"],eq:"CuSO₄·5H₂O =(Δ) CuSO₄ + 5H₂O",tp:"分解反应",
+ ph:["蓝色晶体逐渐变为白色粉末","试管口有水珠生成"],fx:{fog:1,color:"#f5f5f5"},
+ tip:"★结晶水合物受热失水。反之：白色CuSO₄遇水变蓝，可检验水的存在（但不能用于除水，因吸水能力弱）。"});
+
+rx({req:["CuSO4","H2O"],pro:["CuSO4sol"],eq:"CuSO₄ + 5H₂O = CuSO₄·5H₂O（白色变蓝色）",tp:"化合反应",
+ ph:["白色粉末变为蓝色","放出热量"],fx:{color:"#2f8fef"},liquid:"#2f8fef",
+ tip:"★无水CuSO₄（白色）遇水变蓝——检验水的存在（如检验乙醇中是否含水）。"});
+
+rx({req:["Na2SO3","H2SO4d"],pro:["Na2SO4","SO2"],eq:"Na₂SO₃ + H₂SO₄ = Na₂SO₄ + SO₂↑ + H₂O",
+ ion:"SO₃²⁻ + 2H⁺ = SO₂↑ + H₂O",tp:"复分解反应",lv:"warn",
+ ph:["产生刺激性气味气体","固体溶解"],fx:{gas:2,smoke:"#dbe8b0"},liquid:"#eaf2f5",
+ tip:"★实验室制SO₂：Na₂SO₃固体 + 较浓H₂SO₄（70%）。用向上排空气法收集，NaOH吸收尾气。"});
+
+rx({req:["Na2S2O3","H2SO4d"],pro:["S","SO2"],eq:"Na₂S₂O₃ + H₂SO₄ = Na₂SO₄ + S↓ + SO₂↑ + H₂O",
+ ion:"S₂O₃²⁻ + 2H⁺ = S↓ + SO₂↑ + H₂O",tp:"氧化还原（歧化）",
+ ph:["溶液变乳白色浑浊（析出S单质）","有刺激性气味气体"],
+ fx:{precip:"#f4d83a",gas:1},liquid:"#f2f0d8",
+ tip:"★Na₂S₂O₃（大苏打/海波）与酸反应：既沉淀又放气。S₂O₃²⁻中S平均+2价，歧化为0价S和+4价SO₂。"});
+
+rx({req:["FeS","HCl"],pro:["FeCl2","H2S"],eq:"FeS + 2HCl = FeCl₂ + H₂S↑",tp:"复分解反应",lv:"warn",
+ ph:["黑色固体溶解","产生臭鸡蛋气味气体","气体能使湿润Pb(Ac)₂试纸变黑"],
+ fx:{gas:2,smoke:"#dde7ea"},liquid:"#3a6a8a",
+ tip:"★实验室制H₂S（臭鸡蛋味、剧毒）。H₂S有强还原性。不能用HNO₃或浓H₂SO₄（会氧化H₂S）。"});
+
+rx({req:["BaCl2","Na2SO4"],pro:["BaSO4","NaCl"],eq:"BaCl₂ + Na₂SO₄ = BaSO₄↓ + 2NaCl",
+ ion:"Ba²⁺ + SO₄²⁻ = BaSO₄↓",tp:"复分解反应",
+ ph:["产生白色沉淀","加稀盐酸/稀硝酸沉淀不溶解"],fx:{precip:"#f7f7f5"},
+ tip:"★检验SO₄²⁻：先加稀盐酸酸化（排除Ag⁺、CO₃²⁻、SO₃²⁻干扰），再加BaCl₂，白色沉淀。注意不能用HNO₃酸化（会把SO₃²⁻氧化成SO₄²⁻造成误判）。"});
+
+rx({req:["BaCl2","CuSO4"],pro:["BaSO4"],eq:"BaCl₂ + CuSO₄ = BaSO₄↓ + CuCl₂",ion:"Ba²⁺ + SO₄²⁻ = BaSO₄↓",tp:"复分解反应",
+ ph:["产生白色沉淀","蓝色溶液仍为蓝色（Cu²⁺未反应）"],fx:{precip:"#f7f7f5"},liquid:"#5aa0e8",
+ tip:"BaSO₄白色沉淀不溶于酸（医学上作钡餐造影，因不溶不被吸收）。"});
+
+rx({req:["H2SO4c","H2O"],pro:["H2SO4d"],eq:"浓H₂SO₄ + H₂O（稀释，放出大量热）",tp:"物理变化（溶解放热）",lv:"danger",
+ ph:["放出大量热，溶液温度急剧升高","若把水倒入酸中会剧烈沸腾飞溅"],
+ fx:{heat:90,fog:2,boom:1},liquid:"#f0e6ce",
+ tip:"★必须「酸入水」，沿壁缓慢加入并不断搅拌！反之水入酸会因局部过热而暴沸飞溅（水的密度小于浓硫酸，浮在表面沸腾）。"});
+
+rx({req:["H2SO4c","CuSO45"],pro:["CuSO4"],eq:"浓H₂SO₄吸收结晶水：CuSO₄·5H₂O → CuSO₄(白) + 5H₂O",tp:"吸水性",
+ ph:["蓝色晶体逐渐变为白色"],fx:{color:"#f5f5f5"},
+ tip:"★体现浓硫酸吸水性（吸收现成的水/结晶水）。对比脱水性（把有机物中H、O按2:1脱出）——二者机理不同！"});
+
+/* ===== 六、氮及其化合物 ===== */
+rx({req:["N2","O2"],need:"heat",tmin:800,pro:["NO"],eq:"N₂ + O₂ =(放电/高温) 2NO",tp:"化合反应",lv:"warn",
+ ph:["（放电时）产生无色气体NO","气体遇空气立即变红棕色"],
+ fx:{smoke:"#c44a1c",light:1,flash:1},
+ tip:"★「雷雨发庄稼」第一步。N₂化学性质极稳定（N≡N三键键能大），需放电或高温才能反应。自然界固氮。"});
+
+rx({req:["NO","O2"],pro:["NO2"],eq:"2NO + O₂ = 2NO₂",tp:"化合反应",lv:"warn",
+ ph:["无色气体立即变为红棕色","有刺激性气味"],
+ fx:{smoke:"#c44a1c"},
+ tip:"★NO遇空气变红棕色——检验NO的特征现象。所以收集NO只能用排水法（不能用排空气法）。NO有毒，与血红蛋白结合。"});
+
+rx({req:["NO2","H2O"],pro:["HNO3","NO"],eq:"3NO₂ + H₂O = 2HNO₃ + NO",tp:"氧化还原（歧化）",lv:"warn",
+ ph:["红棕色气体逐渐消失","气体体积减少约2/3","生成无色气体NO"],
+ fx:{gas:1,smoke:"#dce8b0"},liquid:"#dce8b0",
+ tip:"★工业制硝酸的关键步骤。NO₂中N为+4价，歧化为+5(HNO₃)和+2(NO)。"});
+
+rx({req:["NO2","O2","H2O"],pro:["HNO3"],eq:"4NO₂ + O₂ + 2H₂O = 4HNO₃",tp:"氧化还原",
+ ph:["红棕色气体完全被吸收","气体体积减小","溶液显酸性"],fx:{},liquid:"#dce8b0",
+ tip:"★NO₂与O₂按4:1混合可完全被水吸收（无气体剩余）。同理NO与O₂按4:3。计算题常考（剩余气体问题）。"});
+
+rx({req:["Cu","HNO3c"],pro:["CuNO3","NO2"],eq:"Cu + 4HNO₃(浓) = Cu(NO₃)₂ + 2NO₂↑ + 2H₂O",tp:"氧化还原",lv:"danger",
+ ph:["反应剧烈，铜片迅速溶解","产生大量红棕色刺激性气体","溶液由无色变为绿色（浓HNO₃中Cu²⁺与NO₂共存显绿）","加水稀释后变蓝色"],
+ fx:{gas:3,smoke:"#c44a1c",heat:40},liquid:"#2a7a5a",
+ tip:"★浓HNO₃还原产物是NO₂（红棕色）。浓硝酸与铜反应溶液呈绿色（溶有NO₂），稀释后变蓝。浓HNO₃要棕色瓶保存（见光分解）。"});
+
+rx({req:["Cu","HNO3d"],pro:["CuNO3","NO"],eq:"3Cu + 8HNO₃(稀) = 3Cu(NO₃)₂ + 2NO↑ + 4H₂O",
+ ion:"3Cu + 8H⁺ + 2NO₃⁻ = 3Cu²⁺ + 2NO↑ + 4H₂O",tp:"氧化还原",lv:"warn",
+ ph:["反应较缓慢，铜片逐渐溶解","产生无色气泡","气泡在液面处变为红棕色","溶液由无色变为蓝色"],
+ fx:{gas:2,smoke:"#c44a1c"},liquid:"#2f8fef",
+ tip:"★稀HNO₃还原产物是NO（无色），遇空气变红棕NO₂。离子方程式系数3-8-2-3-2-4要牢记。Cu与HNO₃反应不放H₂！"});
+
+rx({req:["HNO3c"],need:"light",pro:["NO2","O2","H2O"],eq:"4HNO₃ =(光照/Δ) 4NO₂↑ + O₂↑ + 2H₂O",tp:"分解反应",lv:"warn",
+ ph:["有红棕色气体产生","浓硝酸逐渐变黄（溶有NO₂）"],
+ fx:{smoke:"#c44a1c",gas:2},liquid:"#b6c46a",
+ tip:"★浓硝酸呈黄色是因为溶有其分解产物NO₂。所以浓HNO₃要保存在棕色试剂瓶中，置于冷暗处。"});
+
+rx({req:["NH3","HClg"],pro:["NH4Cl"],eq:"NH₃ + HCl = NH₄Cl",tp:"化合反应",lv:"warn",
+ ph:["产生大量白烟（NH₄Cl固体小颗粒）"],
+ fx:{smoke:"#ffffff",fog:2},
+ tip:"★「空中生烟」实验：两根玻璃棒分别蘸浓氨水和浓盐酸靠近，产生白烟。这是检验NH₃或HCl的方法（注意是「烟」不是「雾」：烟是固体颗粒，雾是小液滴）。"});
+
+rx({req:["NH4Cl","CaOH2s"],need:"heat",pro:["NH3","CaCl2","H2O"],eq:"2NH₄Cl + Ca(OH)₂ =(Δ) CaCl₂ + 2NH₃↑ + 2H₂O",tp:"复分解反应",lv:"warn",
+ ph:["产生有刺激性气味的气体","湿润的红色石蕊试纸变蓝","试管口有白雾/水珠"],
+ fx:{gas:2,smoke:"#e6f2ea"},
+ tip:"★实验室制NH₃：固体+固体加热（与制O₂同型装置）。用向下排空气法收集（NH₃密度小于空气）。干燥用碱石灰（不能用浓H₂SO₄或CaCl₂，会反应）。试管口要塞棉花（防对流）。"});
+
+rx({req:["NH3","H2O"],pro:["NH3H2O"],eq:"NH₃ + H₂O ⇌ NH₃·H₂O ⇌ NH₄⁺ + OH⁻",tp:"化合+电离",
+ ph:["气体迅速溶解，形成喷泉（红色/蓝色喷泉）","溶液显碱性，酚酞变红","有刺激性气味"],
+ fx:{fog:2,color:"#ff7fa8"},liquid:"#ff7fa8",
+ tip:"★喷泉实验原理：NH₃极易溶于水（1:700），造成瓶内压强骤减。成败关键：装置气密性好、烧瓶干燥、NH₃收集满。滴有酚酞的水形成红色喷泉。"});
+
+rx({req:["NH3H2O"],need:"heat",pro:["NH3","H2O"],eq:"NH₃·H₂O =(Δ) NH₃↑ + H₂O",tp:"分解反应",
+ ph:["有刺激性气味气体放出","湿润红色石蕊试纸变蓝"],fx:{gas:2,smoke:"#e6f2ea"},
+ tip:"氨水不稳定，受热易分解，所以要密封保存于阴凉处。浓氨水有挥发性。"});
+
+rx({req:["NH4Cl"],need:"heat",pro:["NH3","HClg"],eq:"NH₄Cl =(Δ) NH₃↑ + HCl↑",tp:"分解反应",
+ ph:["试管底部固体逐渐减少（看似升华）","试管口附近有白色固体重新凝结"],
+ fx:{smoke:"#ffffff",fog:1},
+ tip:"★铵盐受热分解但「不是升华」（化学变化）。NH₃和HCl在冷处又化合生成NH₄Cl白烟。注意NH₄Cl分解与碘升华的区别。"});
+
+rx({req:["NH4Cl","NaOH"],need:"heat",pro:["NH3","NaCl","H2O"],eq:"NH₄Cl + NaOH =(Δ) NH₃↑ + NaCl + H₂O",
+ ion:"NH₄⁺ + OH⁻ =(Δ) NH₃↑ + H₂O",tp:"复分解反应",
+ ph:["产生刺激性气味气体","湿润红色石蕊试纸变蓝"],fx:{gas:2,smoke:"#e6f2ea"},
+ tip:"★检验NH₄⁺（铵根离子）的方法：加浓NaOH溶液并加热，产生能使湿润红色石蕊试纸变蓝的气体。"});
+
+rx({req:["Cu","O2"],need:"heat",pro:["CuO"],eq:"2Cu + O₂ =(Δ) 2CuO",tp:"化合反应",
+ ph:["紫红色铜片表面逐渐变为黑色"],fx:{color:"#2b1c10",heat:40},
+ tip:"铜在空气中加热生成黑色CuO。此反应可用于测定空气中O₂含量（但不如红磷常用）。"});
+
+
+/* ===== 七、氧化还原 & 氧气制备 ===== */
+rx({req:["H2O2","MnO2"],cat:"MnO2",pro:["O2","H2O"],eq:"2H₂O₂ =(MnO₂) 2H₂O + O₂↑",tp:"分解反应（催化）",
+ ph:["立即产生大量气泡","带火星木条复燃","黑色MnO₂反应前后质量不变"],
+ fx:{gas:3},liquid:"#eaf6f5",
+ tip:"★MnO₂是催化剂（不是反应物！改变反应速率，自身质量和化学性质不变）。H₂O₂中O为-1价，歧化为-2和0价。实验室制O₂最环保的方法。"});
+
+rx({req:["H2O2"],need:"heat",pro:["O2","H2O"],eq:"2H₂O₂ =(Δ) 2H₂O + O₂↑",tp:"分解反应",
+ ph:["有气泡产生（较慢）"],fx:{gas:1},liquid:"#eaf6f5",
+ tip:"H₂O₂不稳定，受热也分解，所以要避光、阴凉保存（棕色瓶）。"});
+
+rx({req:["KClO3","MnO2"],need:"heat",cat:"MnO2",con:["KClO3"],pro:["O2","KCl"],eq:"2KClO₃ =(MnO₂,Δ) 2KCl + 3O₂↑",tp:"分解反应",lv:"warn",
+ ph:["加热后有气泡产生","带火星木条复燃","试管中固体逐渐减少"],
+ fx:{gas:3},liquid:"#eaf2f5",
+ tip:"★MnO₂在此也是催化剂（虽然实际参与中间过程）。试管口要略向下倾斜，用排水法或向上排空气法收集。KClO₃是强氧化剂，不能与可燃物混合研磨（会爆炸）。"});
+
+rx({req:["KMnO4"],need:"heat",pro:["O2","MnO2"],eq:"2KMnO₄ =(Δ) K₂MnO₄ + MnO₂ + O₂↑",tp:"分解反应",lv:"warn",
+ ph:["紫黑色固体逐渐变为黑绿色","有气泡产生，带火星木条复燃","试管口要塞棉花"],
+ fx:{gas:2,fog:1},liquid:"#2f8f6a",
+ tip:"★试管口必须塞一团棉花（防止KMnO₄粉末进入导管）。KMnO₄不需催化剂。这是固固加热型装置。"});
+
+rx({req:["KMnO4","FeSO4"],pro:["MnSO4","FeCl3"],eq:"MnO₄⁻ + 5Fe²⁺ + 8H⁺ = Mn²⁺ + 5Fe³⁺ + 4H₂O",tp:"氧化还原",
+ ph:["紫红色褪去","浅绿色变为黄色"],fx:{color:"#c8b040"},liquid:"#c8b040",
+ tip:"★KMnO₄在酸性条件下氧化性最强，被还原为无色Mn²⁺（褪色）。记住：酸性→Mn²⁺(无色)，中性→MnO₂(褐色沉淀)，碱性→MnO₄²⁻(绿色)。"});
+
+rx({req:["KMnO4","HCl"],pro:["MnSO4","Cl2"],eq:"2KMnO₄ + 16HCl = 2KCl + 2MnCl₂ + 5Cl₂↑ + 8H₂O",tp:"氧化还原",lv:"warn",
+ ph:["紫红色褪去","产生黄绿色刺激性气体","溶液变无色"],
+ fx:{gas:2,smoke:"#7fcf7f",color:"#eaf2f5"},liquid:"#eaf2f5",
+ tip:"★常温下KMnO₄与浓盐酸就能反应（不需加热），也是制Cl₂的方法之一。氧化性KMnO₄>MnO₂。"});
+
+
+rx({req:["KMnO4","C2H4"],pro:["MnSO4","CO2"],eq:"12MnO₄⁻ + 5C₂H₄ + 36H⁺ = 12Mn²⁺ + 10CO₂↑ + 28H₂O",tp:"氧化还原",
+ ph:["紫红色溶液褪色","有气泡产生"],fx:{gas:1,color:"#f0f0f5"},liquid:"#f0f0f5",
+ tip:"★乙烯能使酸性KMnO₄褪色（氧化反应）——用于鉴别烷烃和烯烃。但除杂不用KMnO₄（会引入CO₂），用溴水。"});
+
+rx({req:["K2Cr2O7","C2H5OH"],pro:["Cr3"],eq:"K₂Cr₂O₇ + 3C₂H₅OH + 4H₂SO₄ → Cr₂(SO₄)₃(绿) + 3CH₃CHO + ...",tp:"氧化还原",
+ ph:["橙色变为绿色（Cr³⁺）","有刺激性气味（乙醛）"],fx:{color:"#2f8f4e"},liquid:"#2f8f4e",
+ tip:"★交警查酒驾的原理！橙色K₂Cr₂O₇被乙醇还原为绿色Cr³⁺（酒驾检测仪）。乙醇被氧化为乙醛。"});
+
+rx({req:["H2O"],need:"elec",pro:["H2","O2"],eq:"2H₂O =(电解) 2H₂↑ + O₂↑",tp:"分解反应",
+ ph:["两极都有气泡产生","负极(阴极)气体体积是正极(阳极)的2倍","负极气体可燃(淡蓝火焰)，正极使带火星木条复燃"],
+ fx:{gas:3},
+ tip:"★电解水：「正氧负氢，氢二氧一」。为增强导电性常加少量H₂SO₄或NaOH。负极H₂、正极O₂，体积比2:1。"});
+
+/* ===== 八、还原反应（H₂/CO/C 还原金属氧化物） ===== */
+rx({req:["H2","CuO"],need:"heat",pro:["Cu","H2O"],eq:"H₂ + CuO =(Δ) Cu + H₂O",tp:"置换反应（氧化还原）",
+ ph:["黑色固体逐渐变为红色（Cu）","试管口有水珠生成"],
+ fx:{color:"#c98a3c",fog:1},liquid:"#dff0fa",
+ tip:"★「氢气早出晚归，酒精灯迟到早退」：先通H₂排尽空气再加热（防爆炸），反应完先撤酒精灯继续通H₂至冷却（防Cu被氧化）。"});
+
+rx({req:["CO","CuO"],need:"heat",pro:["Cu","CO2"],eq:"CO + CuO =(Δ) Cu + CO₂",tp:"氧化还原",lv:"warn",
+ ph:["黑色固体变为红色","生成的气体使澄清石灰水变浑浊"],
+ fx:{color:"#c98a3c",gas:1},
+ tip:"★CO有毒，尾气必须点燃或收集（气球）。黑色CuO变红是标志现象。"});
+
+rx({req:["C","CuO"],need:"heat",tmin:600,pro:["Cu","CO2"],eq:"C + 2CuO =(高温) 2Cu + CO₂↑",tp:"置换反应（氧化还原）",
+ ph:["黑色粉末中出现红色物质","生成的气体使澄清石灰水变浑浊","反应放热"],
+ fx:{color:"#c98a3c",gas:2,heat:60},liquid:"#eaf2f5",
+ tip:"★木炭还原氧化铜。试管口要略向下倾斜，导管通入澄清石灰水检验CO₂。"});
+
+rx({req:["C","CO2"],need:"heat",tmin:700,pro:["CO"],eq:"C + CO₂ =(高温) 2CO",tp:"化合反应",
+ ph:["红热的木炭继续燃烧","生成无色气体CO"],fx:{gas:1,heat:50},
+ tip:"★吸热反应。高炉炼铁中CO的生成反应。CO有毒，能与血红蛋白结合。"});
+
+/* ===== 九、燃烧反应 & 气体 ===== */
+rx({req:["H2","O2"],need:"fire",pro:["H2O"],eq:"2H₂ + O₂ =(点燃) 2H₂O",tp:"化合反应",lv:"danger",
+ ph:["发出淡蓝色火焰","放出大量热","若混合气体则发出尖锐爆鸣声","罩在火焰上的烧杯内壁有水雾"],
+ fx:{flame:"#6ab7ff",boom:2,fog:2,flash:1},
+ tip:"★点燃H₂前必须验纯！用向下排空气法或排水法收集一试管H₂，用拇指堵住管口移近火焰，若听到尖锐爆鸣声说明不纯，声音很小才较纯。不纯H₂点燃会爆炸。"});
+
+rx({req:["Mg","O2"],need:"fire",pro:["MgO"],eq:"2Mg + O₂ =(点燃) 2MgO",tp:"化合反应",lv:"danger",
+ ph:["发出耀眼的白光","放出大量热","生成白色固体粉末","有白烟产生"],
+ fx:{flame:"#ffffff",light:2,smoke:"#ffffff",boom:1,heat:80},
+ tip:"★用于照明弹、烟花。Mg还能在CO₂、N₂中燃烧（2Mg+CO₂=2MgO+C，所以Mg着火不能用CO₂灭火器，要用沙土）。实验时用坩埚钳夹持，下方垫石棉网。"});
+
+rx({req:["Mg","CO2"],need:"fire",pro:["MgO","C"],eq:"2Mg + CO₂ =(点燃) 2MgO + C",tp:"置换反应",lv:"danger",
+ ph:["镁条继续剧烈燃烧","发出耀眼白光","瓶壁上有黑色颗粒（C）和白色固体（MgO）"],
+ fx:{flame:"#ffffff",light:2,smoke:"#3a3a3a",boom:1},
+ tip:"★重要结论：Mg着火不能用CO₂灭火器（会继续燃烧）！说明CO₂不是绝对不助燃。燃烧不一定需要O₂。"});
+
+rx({req:["Mg","HCl"],pro:["MgCl2","H2"],eq:"Mg + 2HCl = MgCl₂ + H₂↑",ion:"Mg + 2H⁺ = Mg²⁺ + H₂↑",tp:"置换反应",
+ ph:["反应非常剧烈，大量气泡","镁条迅速溶解","试管发烫（放热）"],
+ fx:{gas:3,heat:50},liquid:"#eaf2f5",
+ tip:"Mg比Zn、Fe活泼，与酸反应最剧烈。金属活动性顺序：Mg>Zn>Fe>（H）>Cu。"});
+
+rx({req:["Zn","HCl"],pro:["ZnCl2","H2"],eq:"Zn + 2HCl = ZnCl₂ + H₂↑",ion:"Zn + 2H⁺ = Zn²⁺ + H₂↑",tp:"置换反应",
+ ph:["锌粒表面产生大量气泡","锌粒逐渐溶解","反应较剧烈"],fx:{gas:2},liquid:"#eaf2f5",
+ tip:"★实验室制H₂的常用方法：Zn粒+稀H₂SO₄/稀HCl（不用浓H₂SO₄或HNO₃，因它们有强氧化性不放H₂）。用排水法或向下排空气法收集（H₂密度最小）。"});
+
+rx({req:["Zn","H2SO4d"],pro:["ZnSO4","H2"],eq:"Zn + H₂SO₄ = ZnSO₄ + H₂↑",ion:"Zn + 2H⁺ = Zn²⁺ + H₂↑",tp:"置换反应",
+ ph:["锌粒表面有大量气泡","锌粒逐渐溶解"],fx:{gas:2},
+ tip:"★实验室制H₂标准方法（启普发生器原理：块状固体+液体，不需加热，可随时控制反应）。"});
+
+rx({req:["Zn","CuSO4"],pro:["ZnSO4","Cu"],eq:"Zn + CuSO₄ = ZnSO₄ + Cu",ion:"Zn + Cu²⁺ = Zn²⁺ + Cu",tp:"置换反应",
+ ph:["锌表面覆盖红色物质","蓝色溶液逐渐变浅至无色"],fx:{color:"#eaf2f5"},liquid:"#a8c8d8",
+ tip:"原电池原理的基础反应。若构成原电池（Zn|CuSO₄|Cu），反应速率加快，化学能转化为电能。"});
+
+rx({req:["Cu","AgNO3"],pro:["CuNO3","Ag"],eq:"Cu + 2AgNO₃ = Cu(NO₃)₂ + 2Ag",ion:"Cu + 2Ag⁺ = Cu²⁺ + 2Ag",tp:"置换反应",
+ ph:["铜丝表面析出银白色（灰黑色）针状晶体","溶液由无色变为蓝色","像「银树」一样生长"],
+ fx:{color:"#2f8fef"},liquid:"#2f8fef",
+ tip:"★经典的「银树」实验。金属活动性Cu>Ag。也是原电池/置换反应的典型。"});
+
+rx({req:["CH4","O2"],need:"fire",pro:["CO2","H2O"],eq:"CH₄ + 2O₂ =(点燃) CO₂ + 2H₂O",tp:"氧化反应（燃烧）",lv:"warn",
+ ph:["发出淡蓝色火焰","放出大量热","烧杯内壁有水雾","生成气体使澄清石灰水变浑浊"],
+ fx:{flame:"#6ab7ff",fog:2,boom:1},
+ tip:"★点燃CH₄前也要验纯（与空气混合达爆炸极限会爆炸，瓦斯爆炸原理）。检验产物：干冷烧杯（水雾）+ 澄清石灰水（浑浊）。甲烷火焰呈淡蓝色。"});
+
+rx({req:["C2H2","O2"],need:"fire",pro:["CO2","H2O"],eq:"2C₂H₂ + 5O₂ =(点燃) 4CO₂ + 2H₂O",tp:"氧化反应（燃烧）",lv:"warn",
+ ph:["火焰明亮，带有浓烈黑烟（含C量高）","放出大量热","温度可达3000℃以上（氧炔焰）"],
+ fx:{flame:"#ffb84a",smoke:"#2b2b2b",boom:1,light:1},
+ tip:"★氧炔焰用于切割和焊接金属。乙炔含碳量高，燃烧不充分产生浓黑烟。电石(CaC₂)+水制取。"});
+
+rx({req:["C2H5OH","O2"],need:"fire",pro:["CO2","H2O"],eq:"C₂H₅OH + 3O₂ =(点燃) 2CO₂ + 3H₂O",tp:"氧化反应（燃烧）",
+ ph:["发出淡蓝色火焰","放出大量热","罩上烧杯内壁有水雾"],fx:{flame:"#6ab7ff",fog:1},
+ tip:"乙醇可作燃料（乙醇汽油）。燃烧产物清洁。"});
+
+rx({req:["P","O2"],need:"fire",pro:["P2O5"],eq:"4P + 5O₂ =(点燃) 2P₂O₅",tp:"化合反应",lv:"warn",
+ ph:["剧烈燃烧，产生大量白烟","放出热量","冷却后水倒吸入集气瓶约1/5"],
+ fx:{flame:"#ffcc66",smoke:"#ffffff",boom:1},
+ tip:"★「测定空气中O₂含量」实验（必修一）。用红磷（不用木炭或硫，因生成气体占体积不影响压强）。结论：O₂约占空气体积的1/5。水倒吸少于1/5的原因：装置漏气、红磷不足、未冷却就打开止水夹。"});
+
+rx({req:["C","O2"],need:"fire",pro:["CO2"],eq:"C + O₂ =(点燃) CO₂",tp:"化合反应",
+ ph:["木炭在氧气中剧烈燃烧，发出白光","放出热量","使澄清石灰水变浑浊"],
+ fx:{flame:"#ffc14a",light:1},
+ tip:"★对比：在空气中红热，在纯氧中发出白光。O₂浓度越高燃烧越剧烈。若O₂不足则生成CO（2C+O₂=2CO）。"});
+
+rx({req:["C2H5OH","Na"],pro:["H2"],eq:"2C₂H₅OH + 2Na → 2C₂H₅ONa + H₂↑",tp:"置换反应",lv:"warn",
+ ph:["钠沉在乙醇底部（钠密度大于乙醇）","缓慢产生气泡","钠逐渐溶解，不熔化成球"],
+ fx:{gas:1},
+ tip:"★对比钠与水：钠与乙醇反应更缓和（乙醇羟基H不如水活泼），钠沉底不熔化。证明乙醇中羟基氢的活泼性小于水。"});
+
+/* ===== 十、碳族 & 钙 ===== */
+rx({req:["CaO","H2O"],pro:["CaOH2s"],eq:"CaO + H₂O = Ca(OH)₂（放出大量热）",tp:"化合反应",lv:"warn",
+ ph:["剧烈反应，放出大量热","水沸腾，产生大量白雾","白色块状固体变为粉末","（可煮熟鸡蛋）"],
+ fx:{heat:90,fog:3,gas:1},liquid:"#f5f0e6",
+ tip:"★生石灰遇水放热（自热火锅、自热米饭的原理）。CaO常用作干燥剂（但不能干燥Cl₂、HCl等酸性气体）。"});
+
+rx({req:["CaCO3","HCl"],pro:["CaCl2","CO2"],eq:"CaCO₃ + 2HCl = CaCl₂ + H₂O + CO₂↑",
+ ion:"CaCO₃ + 2H⁺ = Ca²⁺ + H₂O + CO₂↑",tp:"复分解反应",
+ ph:["白色固体表面产生大量气泡","固体逐渐溶解消失","气体能使澄清石灰水变浑浊"],
+ fx:{gas:3},
+ tip:"★实验室制CO₂：大理石/石灰石 + 稀盐酸。不用H₂SO₄（生成微溶CaSO₄覆盖表面阻止反应），不用浓HCl（挥发HCl使气体不纯）。向上排空气法收集。"});
+
+rx({req:["CaCO3"],need:"heat",tmin:800,pro:["CaO","CO2"],eq:"CaCO₃ =(高温) CaO + CO₂↑",tp:"分解反应",
+ ph:["白色固体逐渐分解","有气体生成（使石灰水变浑浊）"],
+ fx:{gas:2},
+ tip:"★工业制生石灰（石灰窑）和CO₂。也是「大理石→生石灰→熟石灰→碳酸钙」钙三角的核心。"});
+
+rx({req:["CO2","CaOH2"],pro:["CaCO3","H2O"],eq:"CO₂ + Ca(OH)₂ = CaCO₃↓ + H₂O",
+ ion:"CO₂ + Ca²⁺ + 2OH⁻ = CaCO₃↓ + H₂O",tp:"复分解反应",
+ ph:["澄清石灰水变浑浊（白色沉淀）"],
+ fx:{precip:"#f5f5ee"},liquid:"#eef2e8",
+ tip:"★检验CO₂的标准方法。若继续通入过量CO₂，沉淀又溶解：CaCO₃+CO₂+H₂O=Ca(HCO₃)₂（可溶）。现象：先变浑浊后变澄清。"});
+
+rx({req:["CO2","NaOH"],pro:["Na2CO3","H2O"],eq:"CO₂ + 2NaOH = Na₂CO₃ + H₂O（CO₂少量）",
+ ion:"CO₂ + 2OH⁻ = CO₃²⁻ + H₂O",tp:"复分解反应",
+ ph:["气体被吸收（无明显现象，但压强减小）","若用气球/瓶则瓶子变瘪"],
+ fx:{},
+ tip:"★吸收CO₂用NaOH溶液（比Ca(OH)₂效果好，因NaOH溶解度大）。但检验CO₂用Ca(OH)₂（有明显现象）。注意CO₂过量时生成NaHCO₃。"});
+
+rx({req:["CO2","litmus"],pro:["CO2","litmus"],eq:"CO₂ + H₂O ⇌ H₂CO₃（碳酸使石蕊变红）",tp:"化合反应",
+ ph:["紫色石蕊试液变红","加热后红色又变回紫色（碳酸分解）"],
+ fx:{color:"#e84a5f"},liquid:"#e84a5f",
+ tip:"★CO₂溶于水生成碳酸使石蕊变红，但碳酸不稳定受热分解（红色褪去）。注意：CO₂本身不能使石蕊变红，是H₂CO₃的作用（干燥CO₂不能使石蕊变色）。"});
+
+rx({req:["Na2SiO3","HCl"],pro:["H2SiO3","NaCl"],eq:"Na₂SiO₃ + 2HCl = H₂SiO₃↓ + 2NaCl",
+ ion:"SiO₃²⁻ + 2H⁺ = H₂SiO₃↓",tp:"复分解反应",
+ ph:["产生白色胶状沉淀（硅酸凝胶）","溶液变稠甚至凝固"],
+ fx:{precip:"#f7f7f5"},liquid:"#f2f2ee",
+ tip:"★强酸制弱酸：HCl > H₂SiO₃。硅酸是白色胶状、难溶于水的弱酸。Na₂SiO₃溶液俗称水玻璃，是矿物胶黏剂、防火剂。"});
+
+rx({req:["Na2SiO3","CO2"],pro:["H2SiO3","Na2CO3"],eq:"Na₂SiO₃ + CO₂ + H₂O = H₂SiO₃↓ + Na₂CO₃",tp:"复分解反应",
+ ph:["产生白色胶状沉淀"],fx:{precip:"#f7f7f5"},
+ tip:"★证明酸性：H₂CO₃ > H₂SiO₃（碳酸比硅酸强）。所以Na₂SiO₃溶液要密封保存，否则会与空气中CO₂反应变质。"});
+
+rx({req:["SiO2","HF"],pro:["SiF4"],eq:"SiO₂ + 4HF = SiF₄↑ + 2H₂O",tp:"复分解反应",lv:"danger",
+ ph:["玻璃表面被腐蚀（变粗糙/变毛）"],
+ fx:{gas:1,fog:1},
+ tip:"★唯一能与SiO₂反应的酸——HF。所以HF能刻蚀玻璃，不能用玻璃瓶盛放（用塑料瓶）。HF有剧毒！"});
+
+rx({req:["SiO2","NaOH"],pro:["Na2SiO3","H2O"],eq:"SiO₂ + 2NaOH = Na₂SiO₃ + H₂O",tp:"复分解反应",lv:"warn",
+ ph:["固体缓慢溶解（常温下很慢）","生成黏稠的Na₂SiO₃溶液"],
+ fx:{},liquid:"#f2eee6",
+ tip:"★解释：盛放NaOH溶液的试剂瓶不能用玻璃塞（会生成Na₂SiO₃把瓶塞粘住），必须用橡胶塞或塑料塞！"});
+
+rx({req:["CaC2","H2O"],pro:["C2H2"],eq:"CaC₂ + 2H₂O → C₂H₂↑ + Ca(OH)₂",tp:"水解反应",lv:"warn",
+ ph:["剧烈反应，产生大量气泡","放出热量","有刺激性气味（含杂质H₂S、PH₃）"],
+ fx:{gas:3,heat:50,fog:1},
+ tip:"★电石制乙炔。用饱和食盐水代替水可减缓反应速率。生成的乙炔有臭味是因为含H₂S、PH₃杂质（可用CuSO₄溶液除去）。"});
+
+/* ===== 十一、特征检验 & 趣味反应 ===== */
+rx({req:["I2","starch"],pro:["I2","starch"],eq:"I₂ + 淀粉 → 蓝色络合物",tp:"特征反应",
+ ph:["溶液立即变为蓝色","加热蓝色褪去，冷却又恢复"],
+ fx:{color:"#2a4a8a"},liquid:"#2a4a8a",
+ tip:"★淀粉遇I₂变蓝——互相检验（检验淀粉或检验I₂）。注意是I₂单质，I⁻不行！加热褪色冷却恢复（物理变化）。"});
+
+rx({req:["CuSO4sol","NaOH"],pro:["CuOH2","Na2SO4"],eq:"CuSO₄ + 2NaOH = Cu(OH)₂↓ + Na₂SO₄",
+ ion:"Cu²⁺ + 2OH⁻ = Cu(OH)₂↓",tp:"复分解反应",
+ ph:["产生蓝色絮状沉淀","蓝色溶液颜色变浅"],
+ fx:{precip:"#2f8f4e"},liquid:"#8fc8e8",
+ tip:"★Cu(OH)₂蓝色沉淀——检验Cu²⁺。新制Cu(OH)₂与醛基共热生成砖红色Cu₂O（检验醛基）。"});
+
+rx({req:["CuOH2"],need:"heat",pro:["CuO","H2O"],eq:"Cu(OH)₂ =(Δ) CuO + H₂O",tp:"分解反应",
+ ph:["蓝色沉淀变为黑色固体","试管口有水珠"],fx:{color:"#2b1c10",fog:1},
+ tip:"难溶碱受热分解规律：Cu(OH)₂→CuO(黑)，Fe(OH)₃→Fe₂O₃(红棕)，Al(OH)₃→Al₂O₃。"});
+
+rx({req:["CuOH2","glucose"],need:"heat",pro:["Cu2O"],eq:"CH₂OH(CHOH)₄CHO + 2Cu(OH)₂ =(Δ) Cu₂O↓ + ...",tp:"氧化还原",
+ ph:["蓝色沉淀变为砖红色沉淀（Cu₂O）"],fx:{precip:"#c96a2a",color:"#c96a2a"},
+ tip:"★检验醛基（葡萄糖、乙醛等）：新制Cu(OH)₂ + 醛基，加热生成砖红色Cu₂O沉淀。也可用于检验糖尿病（尿糖）。条件是碱性环境+加热。"});
+
+rx({req:["phenol","FeCl3"],pro:["phenol","FeCl3"],eq:"苯酚 + Fe³⁺ → 紫色络合物",tp:"显色反应",
+ ph:["溶液变为紫色"],fx:{color:"#9a4ac8"},liquid:"#9a4ac8",
+ tip:"★苯酚遇FeCl₃显紫色——检验苯酚的特征反应。苯酚也叫石炭酸，有弱酸性，有毒，沾到皮肤用酒精清洗。"});
+
+rx({req:["phenol","Br2"],pro:["tribrom"],eq:"C₆H₅OH + 3Br₂ → C₆H₂Br₃OH↓(白) + 3HBr",tp:"取代反应",
+ ph:["立即产生白色沉淀（三溴苯酚）"],fx:{precip:"#f5f5f5"},liquid:"#eaf2f5",
+ tip:"★苯酚与浓溴水生成白色沉淀（三溴苯酚），很灵敏，用于检验苯酚。注意是「浓溴水」不是溴的四氯化碳溶液。"});
+
+rx({req:["dryice","H2O"],pro:["CO2"],eq:"CO₂(s) → CO₂(g)（升华吸热）",tp:"物理变化",
+ ph:["干冰迅速升华，体积变小","周围产生大量白雾（水蒸气冷凝）","温度急剧降低"],
+ fx:{fog:3,smoke:"#ffffff"},
+ tip:"★干冰升华吸热，使周围水蒸气冷凝成小水滴形成白雾。注意「白雾」是小液滴不是CO₂气体（CO₂无色不可见）。用于人工降雨、舞台烟雾、冷藏食品。"});
+
+rx({req:["HCl","phth"],pro:["HCl","phth"],eq:"酚酞遇酸不变色（无色）",tp:"指示剂变色",
+ ph:["酚酞仍为无色"],fx:{color:"#eaf2f5"},liquid:"#eaf2f5",
+ tip:"酚酞：酸性和中性无色，碱性变红。变色范围pH 8.2~10.0。"});
+
+rx({req:["NaOH","phth"],pro:["NaOH","phth"],eq:"酚酞遇碱变红",tp:"指示剂变色",
+ ph:["溶液变为红色"],fx:{color:"#ff5a8a"},liquid:"#ff5a8a",
+ tip:"★检验碱性的经典现象。注意Na₂O₂加入后「先变红后褪色」（因强氧化性漂白）。"});
+
+rx({req:["HCl","litmus"],pro:["HCl","litmus"],eq:"石蕊遇酸变红",tp:"指示剂变色",
+ ph:["紫色石蕊变红色"],fx:{color:"#e84a5f"},liquid:"#e84a5f",
+ tip:"石蕊：酸红(pH<5)、中性紫(5~8)、碱蓝(pH>8)。"});
+
+rx({req:["NaOH","litmus"],pro:["NaOH","litmus"],eq:"石蕊遇碱变蓝",tp:"指示剂变色",
+ ph:["紫色石蕊变蓝色"],fx:{color:"#4a6fe8"},liquid:"#4a6fe8",
+ tip:"石蕊变色范围宽，常用于粗略判断酸碱性。"});
+
+rx({req:["HCl","NaOH"],pro:["NaCl","H2O"],eq:"HCl + NaOH = NaCl + H₂O",ion:"H⁺ + OH⁻ = H₂O",tp:"中和反应（复分解）",
+ ph:["放出热量（中和热）","若加酚酞则由红色变为无色","无明显外观变化（需指示剂）"],
+ fx:{heat:40},
+ tip:"★中和反应放热。判断恰好完全反应要用指示剂（酚酞：红色刚好褪去；或pH计）。中和热：强酸强碱稀溶液约为57.3 kJ/mol。"});
+
+rx({req:["NaOH","H2SO4d"],pro:["Na2SO4","H2O"],eq:"2NaOH + H₂SO₄ = Na₂SO₄ + 2H₂O",ion:"H⁺ + OH⁻ = H₂O",tp:"中和反应",
+ ph:["放热","滴有酚酞的NaOH红色褪去"],fx:{heat:40},liquid:"#eaf2f5",
+ tip:"中和反应的实质都是 H⁺ + OH⁻ = H₂O。生成盐和水的反应不一定是中和反应（如酸性氧化物+碱）。"});
+
+rx({req:["CuO","H2SO4d"],pro:["CuSO4sol","H2O"],eq:"CuO + H₂SO₄ = CuSO₄ + H₂O",ion:"CuO + 2H⁺ = Cu²⁺ + H₂O",tp:"复分解反应",
+ ph:["黑色固体逐渐溶解","溶液由无色变为蓝色"],fx:{dissolve:1,color:"#2f8fef"},liquid:"#2f8fef",
+ tip:"碱性氧化物+酸→盐+水。CuO溶于酸得蓝色Cu²⁺溶液。"});
+
+rx({req:["Fe2O3","HCl"],pro:["FeCl3","H2O"],eq:"Fe₂O₃ + 6HCl = 2FeCl₃ + 3H₂O",tp:"复分解反应",
+ ph:["红棕色固体逐渐溶解","溶液变为黄色"],fx:{dissolve:1,color:"#c87a1a"},liquid:"#c87a1a",
+ tip:"★铁锈（Fe₂O₃·xH₂O）除锈原理：用稀盐酸。生成Fe³⁺黄色溶液。除锈时不能长时间浸泡（酸会继续腐蚀铁）。"});
+
+rx({req:["MgO","HCl"],pro:["MgCl2","H2O"],eq:"MgO + 2HCl = MgCl₂ + H₂O",tp:"复分解反应",
+ ph:["白色固体溶解"],fx:{dissolve:1},liquid:"#eaf2f5",
+ tip:"碱性氧化物+酸→盐+水。MgO熔点高，是优良耐火材料。"});
+
+rx({req:["CaCl2","Na2CO3"],pro:["CaCO3","NaCl"],eq:"CaCl₂ + Na₂CO₃ = CaCO₃↓ + 2NaCl",
+ ion:"Ca²⁺ + CO₃²⁻ = CaCO₃↓",tp:"复分解反应",
+ ph:["产生白色沉淀"],fx:{precip:"#f5f5ee"},
+ tip:"复分解反应发生的条件：生成沉淀、气体或弱电解质（水）。"});
+
+rx({req:["NaCl","AgNO3"],pro:["AgCl"],eq:"NaCl + AgNO₃ = AgCl↓ + NaNO₃",ion:"Ag⁺ + Cl⁻ = AgCl↓",tp:"复分解反应",
+ ph:["产生白色沉淀"],fx:{precip:"#ffffff"},
+ tip:"见AgNO₃+NaCl条目。"});
+
+rx({req:["CuSO45","H2O"],pro:["CuSO4sol"],eq:"CuSO₄·5H₂O溶于水得蓝色溶液",tp:"溶解",
+ ph:["蓝色晶体溶解，形成蓝色溶液"],fx:{color:"#2f8fef"},liquid:"#2f8fef",
+ tip:"CuSO₄·5H₂O（胆矾/蓝矾）溶于水形成蓝色溶液。Cu²⁺在水溶液中呈蓝色（实际是[Cu(H₂O)₄]²⁺）。"});
+
+
+
+/* ---- 反应产物补充 ---- */
+def("MnCl2",{n:"氯化锰",f:"MnCl₂",s:"aq",c:"#f0c8e8",ph:5,cat:"盐",g:"🧴",d:"Mn²⁺溶液（近无色/淡粉），KMnO₄在酸性条件下被还原的产物。"});
+def("KCl",{n:"氯化钾",f:"KCl",s:"aq",c:"#eaf2f5",ph:7,cat:"盐",g:"🧂",d:"无色溶液。Cl₂与KI反应的产物之一。"});
+def("CuCl2",{n:"氯化铜",f:"CuCl₂",s:"aq",c:"#3a9a7a",ph:4,cat:"盐",g:"🧴",d:"蓝绿色溶液（浓时绿色，稀时蓝色）。FeCl₃腐蚀铜的产物。"});
+def("AlCl3",{n:"氯化铝",f:"AlCl₃",s:"aq",c:"#eaf2f5",ph:3,cat:"盐",g:"🧴",d:"无色溶液，Al³⁺水解显酸性。"});
+def("NaAlO2",{n:"偏铝酸钠",f:"NaAlO₂",s:"aq",c:"#eaf2f5",ph:12,cat:"盐",g:"🧴",d:"Al与NaOH反应、Al(OH)₃溶于强碱的产物。溶液中实际为[Al(OH)₄]⁻。"});
+def("H2SO3",{n:"亚硫酸",f:"H₂SO₃",s:"aq",c:"#e8f0d8",ph:3,cat:"酸",g:"🧴",d:"SO₂溶于水生成，弱酸（中强酸），不稳定易分解。"});
+def("MnSO4",{n:"硫酸锰",f:"MnSO₄",s:"aq",c:"#f0f0f5",ph:5,cat:"盐",g:"🧴",d:"Mn²⁺（近无色），酸性KMnO₄被还原后的产物——紫红色褪去。"});
+def("H2SO4",{n:"硫酸",f:"H₂SO₄",s:"aq",c:"#f0e6ce",ph:1,cat:"酸",g:"🧴",d:"强酸。SO₂被氧化或S被氧化的最终产物。"});
+def("HNO3",{n:"硝酸",f:"HNO₃",s:"aq",c:"#dce8b0",ph:1,cat:"酸",g:"🧴",d:"强氧化性酸。NO₂与水反应的产物。"});
+def("CuNO3",{n:"硝酸铜",f:"Cu(NO₃)₂",s:"aq",c:"#2f8fef",ph:4,cat:"盐",g:"🧴",d:"蓝色溶液（Cu²⁺）。Cu与HNO₃反应的产物。"});
+def("FeNO3",{n:"硝酸铁",f:"Fe(NO₃)₃",s:"aq",c:"#c8b040",ph:2,cat:"盐",g:"🧴",d:"黄色溶液（Fe³⁺）。Fe与过量稀HNO₃反应的产物。"});
+def("Cr3",{n:"硫酸铬(III)",f:"Cr₂(SO₄)₃",s:"aq",c:"#2f8f4e",ph:3,cat:"盐",g:"🧴",d:"绿色溶液（Cr³⁺）。K₂Cr₂O₇被乙醇还原的产物——酒驾检测原理。"});
+def("ZnCl2",{n:"氯化锌",f:"ZnCl₂",s:"aq",c:"#eaf2f5",ph:5,cat:"盐",g:"🧴",d:"无色溶液。Zn与盐酸反应制H₂的产物。"});
+def("P2O5",{n:"五氧化二磷",f:"P₂O₅",s:"s",c:"#f5f5fa",ph:1,cat:"氧化物",g:"🪨",d:"白色固体（白烟），红磷燃烧产物。极易吸水，作干燥剂。"});
+def("SiF4",{n:"四氟化硅",f:"SiF₄",s:"g",c:"#eef2f5",ph:7,cat:"氧化物",g:"💨",d:"气体，SiO₂与HF反应的产物（玻璃被刻蚀）。"});
+def("Cu2O",{n:"氧化亚铜",f:"Cu₂O",s:"s",c:"#c96a2a",ph:7,cat:"氧化物",g:"🪨",d:"砖红色沉淀。醛基与新制Cu(OH)₂共热的产物（检验醛基）。"});
+def("tribrom",{n:"三溴苯酚",f:"C₆H₂Br₃OH",s:"s",c:"#f5f5f5",ph:7,cat:"其他",g:"🪨",d:"白色沉淀，苯酚与浓溴水反应的产物（检验苯酚）。"});
+def("SrCl2",{n:"氯化锶",f:"SrCl₂",s:"s",c:"#f5f3ee",ph:7,cat:"盐",g:"🧂",d:"锶盐，焰色反应呈洋红色（烟花红色来源）。"});
+
+
+/* ===== 补充：常见但易遗漏的反应 ===== */
+def("BaCO3",{n:"碳酸钡",f:"BaCO₃",s:"s",c:"#f5f5f0",ph:7,cat:"盐",g:"🪨",d:"白色沉淀（类似CaCO₃），溶于盐酸放出CO₂。Ba²⁺有毒。"});
+def("LiOH",{n:"氢氧化锂",f:"LiOH",s:"aq",c:"#eaf2f5",ph:12,cat:"碱",g:"🧴",d:"Li与水反应的产物，碱性比NaOH弱。"});
+def("ZnOH2",{n:"氢氧化锌",f:"Zn(OH)₂",s:"s",c:"#f5f5f0",ph:7,cat:"两性",g:"🪨",d:"白色沉淀，两性：溶于强酸也溶于强碱（类似Al(OH)₃）。"});
+def("CuS",{n:"硫化铜",f:"CuS",s:"s",c:"#1a1a1a",ph:7,cat:"盐",g:"🪨",d:"黑色沉淀，不溶于稀酸。检验Cu²⁺或H₂S。"});
+def("PbI2",{n:"碘化铅",f:"PbI₂",s:"s",c:"#d4a017",ph:7,cat:"盐",g:"🪨",d:"亮黄色沉淀（「黄金雨」实验），加热溶解冷却析出金色晶体。"});
+def("Na3PO4",{n:"磷酸钠",f:"Na₃PO₄",s:"aq",c:"#eaf2f5",ph:12,cat:"盐",g:"🧴",d:"无色溶液，磷酸与NaOH中和的产物。"});
+
+rx({req:["vinegar","Na2CO3"],pro:["CO2"],eq:"2CH₃COOH + Na₂CO₃ → 2CH₃COONa + H₂O + CO₂↑",tp:"复分解反应",
+ ph:["剧烈冒泡（CO₂）","固体逐渐溶解"],fx:{gas:3},
+ tip:"★酸性：CH₃COOH > H₂CO₃。食醋除水垢、蒸馒头用纯碱都是这个原理。检验碳酸盐可用食醋！"});
+
+rx({req:["vinegar","CaCO3"],pro:["CO2"],eq:"2CH₃COOH + CaCO₃ → (CH₃COO)₂Ca + H₂O + CO₂↑",tp:"复分解反应",
+ ph:["白色固体表面产生气泡","固体逐渐溶解"],fx:{gas:3},
+ tip:"★食醋除水垢（水垢主要成分CaCO₃、Mg(OH)₂）。强酸制弱酸。"});
+
+rx({req:["CH3COOH","NaOH"],pro:["Na3PO4"],eq:"CH₃COOH + NaOH → CH₃COONa + H₂O",tp:"中和反应",
+ ph:["放热","无明显外观变化（需指示剂）"],fx:{heat:35},
+ tip:"弱酸与强碱中和。恰好反应时溶液显碱性（醋酸钠水解），所以用酚酞作指示剂。"});
+
+rx({req:["H3PO4","NaOH"],pro:["Na3PO4"],eq:"H₃PO₄ + 3NaOH = Na₃PO₄ + 3H₂O",tp:"中和反应",
+ ph:["放热，无明显外观变化"],fx:{heat:35},liquid:"#eaf2f5",
+ tip:"磷酸是三元中强酸，与NaOH按量不同可生成NaH₂PO₄、Na₂HPO₄、Na₃PO₄三种盐。用于制磷肥。"});
+
+rx({req:["BaOH2","Na2CO3"],pro:["BaCO3","NaOH"],eq:"Ba(OH)₂ + Na₂CO₃ = BaCO₃↓ + 2NaOH",
+ ion:"Ba²⁺ + CO₃²⁻ = BaCO₃↓",tp:"复分解反应",
+ ph:["产生白色沉淀"],fx:{precip:"#f5f5f0"},
+ tip:"Ba(OH)₂与Na₂CO₃生成白色BaCO₃沉淀（溶于盐酸放气）。Ba²⁺有毒，可溶性钡盐不可入口！"});
+
+rx({req:["BaOH2","Na2SO4"],pro:["BaSO4","NaOH"],eq:"Ba(OH)₂ + Na₂SO₄ = BaSO₄↓ + 2NaOH",
+ ion:"Ba²⁺ + SO₄²⁻ = BaSO₄↓",tp:"复分解反应",
+ ph:["产生白色沉淀","加稀硝酸沉淀不溶解"],fx:{precip:"#f7f7f5"},
+ tip:"★检验SO₄²⁻：用BaCl₂或Ba(OH)₂溶液，生成不溶于稀盐酸的白色沉淀。"});
+
+rx({req:["BaOH2","CO2"],pro:["BaCO3","H2O"],eq:"Ba(OH)₂ + CO₂ = BaCO₃↓ + H₂O",tp:"复分解反应",
+ ph:["澄清溶液变浑浊（白色沉淀）"],fx:{precip:"#f5f5f0"},
+ tip:"Ba(OH)₂也能检验CO₂（与石灰水类似）。CO₂过量时沉淀溶解生成Ba(HCO₃)₂。"});
+
+rx({req:["BaOH2","NH4Cl"],need:"heat",pro:["NH3","BaCl2","H2O"],eq:"2NH₄Cl + Ba(OH)₂ =(Δ) BaCl₂ + 2NH₃↑ + 2H₂O",tp:"复分解反应",
+ ph:["产生刺激性气味气体","湿润红色石蕊试纸变蓝"],fx:{gas:2,smoke:"#e6f2ea"},
+ tip:"★碱与铵盐共热放NH₃——检验NH₄⁺的通用方法（用NaOH或Ba(OH)₂均可）。"});
+
+rx({req:["KOH","HCl"],pro:["KCl","H2O"],eq:"KOH + HCl = KCl + H₂O",ion:"H⁺ + OH⁻ = H₂O",tp:"中和反应",
+ ph:["放热","酚酞由红色变为无色"],fx:{heat:35},liquid:"#eaf2f5",
+ tip:"中和反应实质都是H⁺+OH⁻=H₂O。KOH与NaOH性质相似，但焰色不同（K紫、Na黄）。"});
+
+rx({req:["KOH","FeCl3"],pro:["FeOH3","KCl"],eq:"FeCl₃ + 3KOH = Fe(OH)₃↓ + 3KCl",
+ ion:"Fe³⁺ + 3OH⁻ = Fe(OH)₃↓",tp:"复分解反应",
+ ph:["产生红褐色沉淀"],fx:{precip:"#8a5a2a"},liquid:"#e8b890",
+ tip:"用KOH代替NaOH同样生成红褐色Fe(OH)₃沉淀。"});
+
+rx({req:["KOH","CuSO4sol"],pro:["CuOH2","K2SO4"],eq:"CuSO₄ + 2KOH = Cu(OH)₂↓ + K₂SO₄",tp:"复分解反应",
+ ph:["产生蓝色絮状沉淀"],fx:{precip:"#2f8f4e"},liquid:"#8fc8e8",
+ tip:"生成蓝色Cu(OH)₂沉淀。"});
+
+rx({req:["Al","KOH"],pro:["NaAlO2","H2"],eq:"2Al + 2KOH + 2H₂O = 2KAlO₂ + 3H₂↑",tp:"氧化还原",lv:"warn",
+ ph:["铝溶解，产生大量气泡","放热"],fx:{gas:3,heat:40},liquid:"#eaf2f5",
+ tip:"★Al既能与强酸又能与强碱反应放出H₂——两性的体现。等物质的量Al与酸或碱反应产生H₂量相同。"});
+
+rx({req:["KOH","phth"],pro:["KOH","phth"],eq:"酚酞遇KOH变红（碱性）",tp:"指示剂变色",
+ ph:["溶液变为红色"],fx:{color:"#ff5a8a"},liquid:"#ff5a8a",
+ tip:"KOH是强碱，与NaOH一样能使酚酞变红、石蕊变蓝。"});
+
+rx({req:["Li","H2O"],pro:["LiOH","H2"],eq:"2Li + 2H₂O = 2LiOH + H₂↑",tp:"置换反应",lv:"warn",
+ ph:["锂浮在水面缓慢反应","有气泡产生","锂不熔化成球（熔点较高、放热少）"],
+ fx:{gas:2},liquid:"#eaf2f5",
+ tip:"★碱金属与水反应剧烈程度：Li < Na < K。Li不熔化，Na熔成小球，K燃烧爆炸。金属性（还原性）依次增强。"});
+
+rx({req:["Ca_m","H2O"],pro:["CaOH2","H2"],eq:"Ca + 2H₂O = Ca(OH)₂ + H₂↑",tp:"置换反应",
+ ph:["有气泡产生","溶液变浑浊（Ca(OH)₂微溶）","放热"],
+ fx:{gas:2,precip:"#f5f5ee"},liquid:"#eef6f0",
+ tip:"Ca与水反应比Na温和，生成微溶的Ca(OH)₂使溶液变浑浊。金属性：Na>Mg>Al，Ca>Na。"});
+
+rx({req:["Na2O","H2O"],pro:["NaOH"],eq:"Na₂O + H₂O = 2NaOH",tp:"化合反应",
+ ph:["白色固体溶解","放出大量热","滴酚酞变红"],
+ fx:{heat:50,dissolve:1},liquid:"#ff9ec4",
+ tip:"★碱性氧化物+水→碱。对比Na₂O₂：与水反应还放出O₂（Na₂O不放O₂）——这是重要区别！"});
+
+rx({req:["MgOH2","HCl"],pro:["MgCl2","H2O"],eq:"Mg(OH)₂ + 2HCl = MgCl₂ + 2H₂O",tp:"复分解反应",
+ ph:["白色沉淀逐渐溶解，溶液变澄清"],fx:{dissolve:1},liquid:"#eaf2f5",
+ tip:"★胃药中含Mg(OH)₂或Al(OH)₃中和胃酸（HCl）。水垢中的Mg(OH)₂也可用酸除去。"});
+
+rx({req:["MgCl2","NaOH"],pro:["MgOH2","NaCl"],eq:"MgCl₂ + 2NaOH = Mg(OH)₂↓ + 2NaCl",
+ ion:"Mg²⁺ + 2OH⁻ = Mg(OH)₂↓",tp:"复分解反应",
+ ph:["产生白色沉淀"],fx:{precip:"#f2f7f2"},liquid:"#eef2f0",
+ tip:"Mg(OH)₂白色沉淀，能溶于NH₄Cl溶液（因NH₄⁺结合OH⁻）——这是Mg(OH)₂区别于其他难溶碱的特性。"});
+
+rx({req:["ZnSO4","NaOH"],pro:["ZnOH2","Na2SO4"],eq:"ZnSO₄ + 2NaOH = Zn(OH)₂↓ + Na₂SO₄",tp:"复分解反应",
+ ph:["产生白色沉淀","NaOH过量时沉淀又溶解"],fx:{precip:"#f5f5f0"},
+ tip:"★Zn(OH)₂和Al(OH)₃一样有两性：溶于强酸也溶于强碱。Zn(OH)₂+2NaOH=Na₂ZnO₂+2H₂O。"});
+
+rx({req:["ZnOH2","NaOH"],pro:["NaAlO2"],eq:"Zn(OH)₂ + 2NaOH = Na₂ZnO₂ + 2H₂O",tp:"复分解反应",
+ ph:["白色沉淀溶解，溶液变澄清"],fx:{dissolve:1},liquid:"#eaf2f5",
+ tip:"Zn(OH)₂两性，溶于强碱生成锌酸盐（与Al(OH)₃类似）。"});
+
+rx({req:["Ag","HNO3d"],pro:["AgNO3","NO"],eq:"3Ag + 4HNO₃(稀) = 3AgNO₃ + NO↑ + 2H₂O",tp:"氧化还原",lv:"warn",
+ ph:["银逐渐溶解","有无色气泡，在液面处变红棕色","溶液变无色"],
+ fx:{gas:2,smoke:"#c44a1c"},liquid:"#f0f5f5",
+ tip:"★不活泼金属（Cu、Ag）能溶于硝酸（强氧化性酸），但不溶于盐酸、稀硫酸。银器变黑可用稀硝酸洗。"});
+
+rx({req:["H2S","SO2"],pro:["S","H2O"],eq:"2H₂S + SO₂ = 3S↓ + 2H₂O",tp:"氧化还原（归中）",lv:"warn",
+ ph:["有淡黄色固体（硫）析出","气体体积减小"],
+ fx:{precip:"#f4d83a",gas:1},liquid:"#f2f0d8",
+ tip:"★归中反应：H₂S中S(-2)与SO₂中S(+4)反应生成S(0)。火山口、温泉附近有天然硫成因之一。"});
+
+rx({req:["H2S","CuSO4sol"],pro:["CuS","H2SO4"],eq:"H₂S + CuSO₄ = CuS↓(黑) + H₂SO₄",tp:"复分解反应",
+ ph:["立即产生黑色沉淀","蓝色溶液中出现黑色"],fx:{precip:"#1a1a1a"},liquid:"#3a5a6a",
+ tip:"★CuS黑色且不溶于稀酸——这是个「弱酸制强酸」的例外（因CuS极难溶）。检验H₂S用Pb(Ac)₂试纸变黑。"});
+
+rx({req:["H2S","O2"],need:"fire",pro:["SO2","H2O"],eq:"2H₂S + 3O₂ =(点燃) 2SO₂ + 2H₂O",tp:"氧化反应（燃烧）",lv:"warn",
+ ph:["发出淡蓝色火焰","有刺激性气味气体","O₂不足时析出黄色硫"],
+ fx:{flame:"#8ad8ff",smoke:"#dbe8b0"},
+ tip:"H₂S可燃。完全燃烧生成SO₂，不完全燃烧析出S（2H₂S+O₂=2S+2H₂O）。H₂S剧毒，臭鸡蛋味。"});
+
+rx({req:["PbNO3","KI"],pro:["PbI2"],eq:"Pb(NO₃)₂ + 2KI = PbI₂↓ + 2KNO₃",ion:"Pb²⁺ + 2I⁻ = PbI₂↓",tp:"复分解反应",lv:"warn",
+ ph:["立即产生亮黄色沉淀","加热溶解，冷却后析出金色闪光晶体（「黄金雨」）"],
+ fx:{precip:"#d4a017"},liquid:"#e8d8a0",
+ tip:"★「黄金雨」实验：PbI₂黄色沉淀，加热溶解后缓慢冷却析出金黄色晶体。铅盐有毒！"});
+
+rx({req:["NaAlO2","HCl"],pro:["AlOH3","NaCl"],eq:"NaAlO₂ + HCl + H₂O = Al(OH)₃↓ + NaCl",tp:"复分解反应",
+ ph:["产生白色胶状沉淀","盐酸过量时沉淀又溶解"],fx:{precip:"#f3f6f3"},liquid:"#eaf2f5",
+ tip:"★向NaAlO₂溶液中滴加盐酸：先有白色沉淀，后溶解（Al³⁺）。反过来向Al³⁺中滴NaOH也是先沉淀后溶解。两性重点！"});
+
+rx({req:["NaAlO2","CO2"],pro:["AlOH3","Na2CO3"],eq:"2NaAlO₂ + CO₂ + 3H₂O = 2Al(OH)₃↓ + Na₂CO₃",tp:"复分解反应",
+ ph:["产生白色胶状沉淀"],fx:{precip:"#f3f6f3"},liquid:"#eef2f0",
+ tip:"★向NaAlO₂中通CO₂生成Al(OH)₃沉淀（CO₂过量沉淀也不溶解，因H₂CO₃酸性太弱）。工业制Al(OH)₃的方法。"});
+
+rx({req:["H2SiO3"],need:"heat",pro:["SiO2","H2O"],eq:"H₂SiO₃ =(Δ) SiO₂ + H₂O",tp:"分解反应",
+ ph:["白色胶状物质变为白色粉末","试管口有水珠"],fx:{fog:1,color:"#f7f6f2"},
+ tip:"硅酸受热分解为SiO₂和水。硅酸是唯一难溶于水的酸（用强酸与硅酸盐反应制得）。"});
+
+rx({req:["morange","HCl"],pro:["morange","HCl"],eq:"甲基橙遇酸变红",tp:"指示剂变色",
+ ph:["甲基橙变为红色"],fx:{color:"#e84a5f"},liquid:"#e84a5f",
+ tip:"甲基橙变色范围pH 3.1~4.4：酸红、碱黄。变色范围窄，适合强酸强碱滴定。"});
+
+rx({req:["morange","NaOH"],pro:["morange","NaOH"],eq:"甲基橙遇碱变黄",tp:"指示剂变色",
+ ph:["甲基橙变为黄色"],fx:{color:"#f6e05e"},liquid:"#f6e05e",
+ tip:"甲基橙：pH<3.1红、3.1~4.4橙、>4.4黄。"});
+
+rx({req:["wetlitmus_r","NH3"],pro:["wetlitmus_r","NH3"],eq:"湿润红色石蕊试纸遇NH₃变蓝",tp:"指示剂变色",
+ ph:["红色石蕊试纸变为蓝色"],fx:{smoke:"#4a6fe8"},
+ tip:"★检验NH₃（碱性气体）的标准方法：湿润的红色石蕊试纸变蓝。试纸必须湿润！"});
+
+rx({req:["wetlitmus_b","HClg"],pro:["wetlitmus_b","HClg"],eq:"湿润蓝色石蕊试纸遇HCl变红",tp:"指示剂变色",
+ ph:["蓝色石蕊试纸变为红色"],fx:{fog:1},
+ tip:"★检验HCl等酸性气体：湿润蓝色石蕊试纸变红。HCl遇水蒸气形成白雾。"});
+
+rx({req:["wetlitmus_b","Cl2"],pro:["wetlitmus_b","Cl2"],eq:"Cl₂ + H₂O = HCl + HClO → 试纸先变红后褪色",tp:"氧化漂白",lv:"warn",
+ ph:["湿润蓝色石蕊试纸先变红（HCl酸性）","随后红色褪去（HClO漂白）"],fx:{smoke:"#7fcf7f",color:"#f0f0f0"},
+ tip:"★Cl₂使湿润有色布条/试纸「先变红后褪色」——证明氯水既有酸性又有漂白性（HClO）。干燥Cl₂无漂白性！"});
+
+rx({req:["Na","kero"],pro:["Na","kero"],eq:"Na + 煤油 → 不反应（钠保存在煤油中）",tp:"不反应",
+ ph:["钠沉在煤油中，无任何变化","钠表面保持银白色光泽"],
+ fx:{},
+ tip:"★钠保存在煤油中：煤油密度小于钠？不，钠密度0.97大于煤油0.8，钠沉底；煤油隔绝空气和水分，防止Na被氧化或与水反应。同理Li保存在石蜡中（Li密度小于煤油会浮起）。"});
+
+rx({req:["CuSO45","H2SO4c"],pro:["CuSO4"],eq:"CuSO₄·5H₂O +(浓H₂SO₄) CuSO₄(白) + 5H₂O",tp:"吸水性",
+ ph:["蓝色晶体变白"],fx:{color:"#f5f5f5"},
+ tip:"浓H₂SO₄吸水性：夺取结晶水。对比脱水性（夺取有机物中H、O按2:1组成的水）。"});
+
+rx({req:["CaSO4","Na2CO3"],pro:["CaCO3","Na2SO4"],eq:"CaSO₄ + Na₂CO₃ = CaCO₃↓ + Na₂SO₄",tp:"沉淀转化",
+ ph:["白色固体转变为另一种白色固体（沉淀转化）"],fx:{precip:"#f5f5ee"},
+ tip:"★沉淀转化：溶解度较大的CaSO₄(微溶)转化为更难溶的CaCO₃。锅炉水垢（CaSO₄）先用Na₂CO₃处理，再用盐酸除去。"});
+
+/* ===== 焰色反应表 ===== */
+const FLAME={
+  Na:{c:"#ffcc33",n:"黄色",tip:"钠的焰色为黄色。钠及其化合物在酒精灯上灼烧，火焰呈黄色。烟花中的黄色即来源于钠盐。"},
+  K:{c:"#c77dff",n:"紫色",tip:"钾的焰色为紫色，需透过蓝色钴玻璃观察（滤去钠的黄色干扰）。"},
+  Li:{c:"#ff6a9a",n:"紫红色",tip:"锂的焰色为紫红色。"},
+  Ca_m:{c:"#ff7a3c",n:"砖红色",tip:"钙的焰色为砖红色。"},
+  Cu:{c:"#3ce88a",n:"绿色",tip:"铜的焰色为绿色（铜及其化合物）。"},
+  CuSO4sol:{c:"#3ce88a",n:"绿色",tip:"铜盐焰色为绿色。"},
+  CuSO45:{c:"#3ce88a",n:"绿色",tip:"铜盐焰色为绿色。"},
+  BaCl2:{c:"#b6e84a",n:"黄绿色",tip:"钡的焰色为黄绿色。"},
+  NaCl:{c:"#ffcc33",n:"黄色",tip:"钠盐焰色黄色。焰色反应是物理变化（电子跃迁），体现的是元素性质，与化合态无关。"},
+  Na2CO3:{c:"#ffcc33",n:"黄色",tip:"钠盐焰色黄色——无论单质、化合物焰色相同，说明焰色反应是元素的性质。"},
+  SrCl2:{c:"#ff2a5a",n:"洋红色",tip:"锶的焰色为洋红色，烟花红色来源。"}
+};
+
+/* ===== 物质别名（铁丝等可参与同一反应） ===== */
+const ALIAS={Fewire:"Fe"};
+
+/* ===== 场景状态 ===== */
+const S={
+  vessel:"testtube", items:[], liquid:null, level:0,
+  precip:null, precipAmt:0, temp:25,
+  fire:false, heating:false, lightOn:false, elec:false,
+  stopper:false, shaking:false,
+  flash:0, shake:0, gasAccum:0, warn:"", safety:"安全"
+};
+let P=[];            // 粒子
+let FLAMES=[];       // 持续火源
+let tick=0;
+
+/* ===== 画布 ===== */
+const cv=document.getElementById('canvas');
+const ctx=cv.getContext('2d');
+let W=0,H=0;
+function resize(){
+  const r=cv.parentElement.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  W=r.width; H=r.height;
+  cv.width=W*dpr; cv.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',resize);
+
+/* ===== 粒子 ===== */
+function bub(n,col){for(let i=0;i<n;i++)P.push({t:"bub",x:0,y:0,r:2+Math.random()*4,vy:0.6+Math.random()*1.2,life:6,seed:Math.random()*9,c:col||"#cfefff"})}
+function smoke(n,col){for(let i=0;i<n;i++)P.push({t:"smoke",x:0,y:0,r:6+Math.random()*10,vy:0.5+Math.random()*0.8,vx:(Math.random()-0.5)*0.6,life:4,a:0.5,c:col||"#9aa7c2"})}
+function spark(n,col){for(let i=0;i<n;i++){const an=-Math.PI/2+(Math.random()-0.5)*2.4,sp=2+Math.random()*5;
+  P.push({t:"spark",x:0,y:0,vx:Math.cos(an)*sp,vy:Math.sin(an)*sp,life:0.7+Math.random()*0.6,c:col||"#ffb84a",r:1.5+Math.random()*2})}}
+function debris(n,col){for(let i=0;i<n;i++){const an=-Math.PI/2+(Math.random()-0.5)*3,sp=3+Math.random()*8;
+  P.push({t:"debris",x:0,y:0,vx:Math.cos(an)*sp,vy:Math.sin(an)*sp,life:1+Math.random()*0.8,c:col||"#ff9a3c",r:2+Math.random()*3})}}
+function boom(level){S.flash=Math.max(S.flash,0.5+level*0.25);S.shake=8+level*6;debris(30+level*25);spark(40+level*20);smoke(12+level*8,"#c9a86a")}
+
+function stepP(dt){
+  const v=geo();
+  for(let i=P.length-1;i>=0;i--){
+    const p=P[i];
+    if(p.t==="bub"){
+      if(p.x===0&&p.y===0){p.x=v.cx+(Math.random()-0.5)*v.iw*0.7;p.y=v.bot-6}
+      p.y-=p.vy*dt*60; p.ph=(p.ph||0)+dt*4;
+      p.x+=Math.sin(p.ph+p.seed)*0.35;
+      if(p.y<v.liqTop+4){P.splice(i,1);continue}
+    }else if(p.t==="smoke"){
+      if(p.x===0&&p.y===0){p.x=v.cx+(Math.random()-0.5)*v.iw*0.5;p.y=v.top-4}
+      p.y-=p.vy*dt*60; p.x+=p.vx*dt*60; p.r+=dt*20; p.a-=dt*0.16;
+    }else if(p.t==="spark"||p.t==="debris"){
+      if(p.x===0&&p.y===0){p.x=v.cx+(Math.random()-0.5)*v.iw*0.6;p.y=v.top+10}
+      p.x+=p.vx*dt*60; p.y+=p.vy*dt*60; p.vy+=dt*(p.t==="debris"?120:80);
+      p.life-=dt;
+    }
+    p.life-=dt*(p.t==="bub"?0.16:1);
+    if(p.life<=0||(p.a!==undefined&&p.a<=0))P.splice(i,1);
+  }
+  for(let i=FLAMES.length-1;i>=0;i--){FLAMES[i].life-=dt;if(FLAMES[i].life<=0)FLAMES.splice(i,1)}
+}
+
+/* ===== 容器几何 ===== */
+function geo(){
+  const cx=W/2, base=H*0.72;
+  let iw,ih,top,bot,kind;
+  if(S.vessel==="testtube"){iw=68;ih=210;kind="tube"}
+  else if(S.vessel==="beaker"){iw=126;ih=150;kind="beaker"}
+  else if(S.vessel==="flask"){iw=140;ih=170;kind="flask"}
+  else if(S.vessel==="dish"){iw=170;ih=76;kind="dish"}
+  else if(S.vessel==="gasjar"){iw=112;ih=180;kind="jar"}
+  else if(S.vessel==="funnel"){iw=120;ih=150;kind="flask"}
+  else{iw=68;ih=210;kind="tube"}
+  top=base-ih; bot=base;
+  const liqH=Math.min(ih-8,S.level);
+  const liqTop=bot-liqH;
+  return {cx,base,top,bot,iw,ih,kind,liqTop,liqH};
+}
+
+/* ===== 绘制容器 ===== */
+function drawVessel(g){
+  const {cx,top,bot,iw,ih,kind}=g;
+  ctx.save();
+  // 玻璃主体
+  ctx.beginPath();
+  if(kind==="tube"){
+    ctx.moveTo(cx-iw/2,top);
+    ctx.lineTo(cx-iw/2,bot-iw/2);
+    ctx.arc(cx,bot-iw/2,iw/2,Math.PI,0,true);
+    ctx.lineTo(cx+iw/2,top);
+  }else if(kind==="beaker"){
+    ctx.moveTo(cx-iw/2,top);ctx.lineTo(cx-iw/2,bot-6);
+    ctx.quadraticCurveTo(cx-iw/2,bot,cx-iw/2+8,bot);
+    ctx.lineTo(cx+iw/2-8,bot);
+    ctx.quadraticCurveTo(cx+iw/2,bot,cx+iw/2,bot-6);
+    ctx.lineTo(cx+iw/2,top);
+  }else if(kind==="flask"){
+    ctx.moveTo(cx-iw*0.16,top);ctx.lineTo(cx-iw*0.16,top+ih*0.34);
+    ctx.lineTo(cx-iw/2,bot-10);
+    ctx.quadraticCurveTo(cx-iw/2,bot,cx-iw/2+12,bot);
+    ctx.lineTo(cx+iw/2-12,bot);
+    ctx.quadraticCurveTo(cx+iw/2,bot,cx+iw/2,bot-10);
+    ctx.lineTo(cx+iw*0.16,top+ih*0.34);ctx.lineTo(cx+iw*0.16,top);
+  }else if(kind==="dish"){
+    ctx.moveTo(cx-iw/2,top);
+    ctx.quadraticCurveTo(cx,bot+14,cx+iw/2,top);
+  }else{
+    ctx.moveTo(cx-iw/2,top+8);ctx.quadraticCurveTo(cx-iw/2,top,cx,top);
+    ctx.quadraticCurveTo(cx+iw/2,top,cx+iw/2,top+8);
+    ctx.lineTo(cx+iw/2,bot-6);
+    ctx.quadraticCurveTo(cx+iw/2,bot,cx+iw/2-8,bot);
+    ctx.lineTo(cx-iw/2+8,bot);
+    ctx.quadraticCurveTo(cx-iw/2,bot,cx-iw/2,bot-6);
+    ctx.closePath();
+  }
+  ctx.fillStyle="rgba(180,215,240,0.07)";
+  ctx.fill();
+  ctx.strokeStyle="rgba(190,225,255,0.55)";
+  ctx.lineWidth=2.5;ctx.stroke();
+  // 高光
+  ctx.beginPath();
+  if(kind==="dish"){ctx.ellipse(cx-iw*0.22,top+ih*0.35,4,ih*0.22,0,0,6.28)}
+  else{ctx.rect(cx-iw/2+7,top+14,5,ih-40)}
+  ctx.fillStyle="rgba(255,255,255,0.16)";ctx.fill();
+  // 橡皮塞
+  if(S.stopper){
+    ctx.beginPath();
+    ctx.moveTo(cx-iw*0.34,top-22);ctx.lineTo(cx+iw*0.34,top-22);
+    ctx.lineTo(cx+iw*0.28,top+2);ctx.lineTo(cx-iw*0.28,top+2);
+    ctx.closePath();
+    ctx.fillStyle="#8a6a4a";ctx.fill();
+    ctx.strokeStyle="#5a3a20";ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ===== 绘制液体 ===== */
+function drawLiquid(g){
+  if(!S.liquid||S.level<=0)return;
+  const {cx,bot,iw,ih,liqTop,liqH,kind}=g;
+  ctx.save();
+  ctx.beginPath();
+  if(kind==="tube"){
+    ctx.rect(cx-iw/2+2,liqTop,iw-4,bot-liqTop-iw/2);
+    ctx.moveTo(cx-iw/2+2,bot-iw/2);
+    ctx.arc(cx,bot-iw/2,iw/2-2,Math.PI,0,true);
+  }else if(kind==="dish"){
+    ctx.rect(cx-iw/2+4,liqTop,iw-8,liqH);
+  }else if(kind==="flask"){
+    ctx.rect(cx-iw/2+2,liqTop,iw-4,bot-liqTop-8);
+  }else{
+    ctx.rect(cx-iw/2+2,liqTop,iw-4,bot-liqTop-6);
+  }
+  ctx.fillStyle=S.liquid;ctx.fill();
+  // 液面
+  ctx.beginPath();ctx.moveTo(cx-iw/2+2,liqTop);ctx.lineTo(cx+iw/2-2,liqTop);
+  ctx.strokeStyle="rgba(255,255,255,0.35)";ctx.lineWidth=2;ctx.stroke();
+  ctx.restore();
+  // 沉淀
+  if(S.precip&&S.precipAmt>0){
+    ctx.save();
+    const n=Math.min(60,Math.round(S.precipAmt*12));
+    for(let i=0;i<n;i++){
+      const a=(i*2.399);
+      const px=cx+Math.cos(a)*(iw*0.36*Math.sqrt(i/n));
+      const py=bot-4-((i%7)*3);
+      ctx.beginPath();ctx.arc(px,py,2.4+ (i%3)*0.7,0,6.28);
+      ctx.fillStyle=S.precip;ctx.globalAlpha=0.85;ctx.fill();
+    }
+    ctx.globalAlpha=1;ctx.restore();
+  }
+}
+
+/* ===== 绘制火焰 ===== */
+function drawFlame(x,y,size,color,t){
+  const wob=Math.sin(t*0.012)*size*0.06;
+  ctx.save();ctx.translate(x+wob,y);
+  const layers=[[1,"rgba(255,180,60,0.95)"],[0.68,"rgba(255,220,90,0.95)"],[0.38,"rgba(255,250,200,0.95)"]];
+  if(color&&color!=="#ffb84a"){layers[0][1]=color;layers[1][1]=color;}
+  for(const [s,c] of layers){
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.bezierCurveTo(-size*0.55*s,-size*0.5*s,-size*0.4*s,-size*1.1*s,0,-size*1.6*s);
+    ctx.bezierCurveTo(size*0.4*s,-size*1.1*s,size*0.55*s,-size*0.5*s,0,0);
+    ctx.closePath();
+    ctx.fillStyle=c;ctx.globalAlpha=0.85;ctx.fill();
+  }
+  ctx.globalAlpha=1;ctx.restore();
+}
+
+/* ===== 酒精灯 ===== */
+function drawLamp(g){
+  const x=g.cx+g.iw/2+52, y=g.bot;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x-20,y-8);ctx.lineTo(x-20,y-46);
+  ctx.lineTo(x+20,y-46);ctx.lineTo(x+20,y-8);
+  ctx.closePath();
+  ctx.fillStyle="rgba(200,225,245,0.16)";ctx.fill();
+  ctx.strokeStyle="rgba(200,230,255,0.5)";ctx.lineWidth=2;ctx.stroke();
+  // 灯芯
+  ctx.beginPath();ctx.rect(x-4,y-56,8,12);ctx.fillStyle="#c9a86a";ctx.fill();
+  ctx.restore();
+  if(S.heating||S.fire){
+    drawFlame(x,y-56,26,"#ffb84a",tick);
+    // 加热辉光
+    ctx.save();ctx.globalAlpha=0.18;
+    const gr=ctx.createRadialGradient(x,y-40,4,x,y-40,70);
+    gr.addColorStop(0,"#ffcc66");gr.addColorStop(1,"rgba(255,204,102,0)");
+    ctx.fillStyle=gr;ctx.beginPath();ctx.arc(x,y-40,70,0,6.28);ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ===== 主循环 ===== */
+function render(){
+  tick++;
+  const dt=1/60;
+  stepP(dt);
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if(S.shake>0){ctx.translate((Math.random()-0.5)*S.shake,(Math.random()-0.5)*S.shake);S.shake*=0.88;if(S.shake<0.4)S.shake=0}
+  const g=geo();
+  // 台面阴影
+  ctx.save();
+  ctx.beginPath();ctx.ellipse(g.cx,g.bot+6,g.iw*0.7,10,0,0,6.28);
+  ctx.fillStyle="rgba(0,0,0,0.35)";ctx.fill();ctx.restore();
+  drawLamp(g);
+  drawVessel(g);
+  drawLiquid(g);
+  // 粒子
+  for(const p of P){
+    if(p.t==="bub"){
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);
+      ctx.fillStyle="rgba(210,240,255,0.28)";ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,0.5)";ctx.lineWidth=1;ctx.stroke();
+      ctx.beginPath();ctx.arc(p.x-p.r*0.3,p.y-p.r*0.3,p.r*0.28,0,6.28);
+      ctx.fillStyle="rgba(255,255,255,0.7)";ctx.fill();
+    }else if(p.t==="smoke"){
+      const gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+      gr.addColorStop(0,p.c);gr.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.globalAlpha=Math.max(0,p.a);ctx.fillStyle=gr;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);ctx.fill();ctx.globalAlpha=1;
+    }else if(p.t==="spark"){
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);
+      ctx.fillStyle=p.c;ctx.fill();
+      ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*1.6,p.y-p.vy*1.6);
+      ctx.strokeStyle=p.c;ctx.lineWidth=p.r*0.8;ctx.globalAlpha=0.5;ctx.stroke();ctx.globalAlpha=1;
+    }else if(p.t==="debris"){
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.28);ctx.fillStyle=p.c;ctx.fill();
+    }
+  }
+  // 通电
+  if(S.elec){
+    ctx.save();ctx.strokeStyle="#7fd8ff";ctx.lineWidth=2;ctx.globalAlpha=0.7;
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.moveTo(g.cx-g.iw*0.3,g.top+30+i*22);
+      ctx.lineTo(g.cx-g.iw*0.1,g.top+30+i*22+ (Math.random()-0.5)*8);
+      ctx.lineTo(g.cx+g.iw*0.1,g.top+30+i*22+ (Math.random()-0.5)*8);
+      ctx.lineTo(g.cx+g.iw*0.3,g.top+30+i*22);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // 光照
+  if(S.lightOn){
+    ctx.save();ctx.globalAlpha=0.10;
+    const gr=ctx.createRadialGradient(W*0.82,H*0.2,10,W*0.82,H*0.2,260);
+    gr.addColorStop(0,"#fff9c4");gr.addColorStop(1,"rgba(255,249,196,0)");
+    ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);ctx.restore();
+  }
+  ctx.restore();
+  // 闪光
+  if(S.flash>0){
+    ctx.fillStyle="rgba(255,240,200,"+Math.min(0.85,S.flash)+")";
+    ctx.fillRect(0,0,W,H);S.flash-=0.045;
+  }
+  // 容器内物质标签
+  if(S.items.length){
+    const names=S.items.map(i=>SUB[i.id]?SUB[i.id].n:i.id).join(" + ");
+    ctx.save();
+    ctx.font="12px -apple-system,sans-serif";
+    const tw=ctx.measureText(names).width+18;
+    ctx.fillStyle="rgba(10,14,26,0.82)";
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(g.cx-tw/2,g.bot+26,tw,24,12);
+    else ctx.rect(g.cx-tw/2,g.bot+26,tw,24);
+    ctx.fill();
+    ctx.strokeStyle="rgba(79,209,197,0.5)";ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle="#9fe8e0";ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText(names,g.cx,g.bot+38);
+    ctx.restore();
+  }
+  // 温度高亮
+  if(S.temp>=100){
+    ctx.save();ctx.font="11px sans-serif";ctx.fillStyle="#ff9a6a";ctx.textAlign="center";
+    ctx.fillText("🔥 "+Math.round(S.temp)+"℃",g.cx,g.top-34);ctx.restore();
+  }
+  requestAnimationFrame(render);
+}
+
+
+/* ===== 仪器 ===== */
+const GLASSES=[
+ {id:"testtube",n:"试管",e:"🧪",d:"少量试剂反应，可直接加热，试管口略向下倾（固体加热）"},
+ {id:"beaker",n:"烧杯",e:"🥛",d:"较多试剂、配制溶液，加热需垫石棉网"},
+ {id:"flask",n:"锥形瓶",e:"🍶",d:"滴定、气体发生装置，振荡不易溅出"},
+ {id:"dish",n:"蒸发皿",e:"🍲",d:"蒸发浓缩、结晶；铝热反应用它（垫沙）"},
+ {id:"gasjar",n:"集气瓶",e:"🫙",d:"收集或贮存少量气体，物质在气体中燃烧"}
+];
+let selected=null;
+
+/* ===== 覆盖：支持自定义火焰颜色 ===== */
+function drawLamp(g){
+  const x=g.cx+g.iw/2+52, y=g.bot;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x-20,y-8);ctx.lineTo(x-20,y-46);ctx.lineTo(x+20,y-46);ctx.lineTo(x+20,y-8);
+  ctx.closePath();
+  ctx.fillStyle="rgba(200,225,245,0.16)";ctx.fill();
+  ctx.strokeStyle="rgba(200,230,255,0.5)";ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.rect(x-4,y-56,8,12);ctx.fillStyle="#c9a86a";ctx.fill();
+  ctx.restore();
+  if(S.heating||S.fire)drawFlame(x,y-56,26,S.flameColor||"#ffb84a",tick);
+}
+
+/* ===== 构建试剂面板 ===== */
+function buildReagents(){
+  const box=document.getElementById('tab-reagent');
+  const groups=[["酸","🧴"],["碱","🧪"],["金属","⚙️"],["非金属","🟡"],["氧化物","🪨"],["盐","🧂"],["两性","⚖️"],["指示剂","🎨"],["其他","📦"],["常见","💧"]];
+  let h="";
+  for(const [g,em] of groups){
+    const list=Object.values(SUB).filter(x=>x.cat===g);
+    if(!list.length)continue;
+    h+='<div class="group-title">'+em+' '+g+'（'+list.length+'）</div><div class="item-grid">';
+    for(const s of list){
+      h+='<button class="item" data-sub="'+s.id+'"><span class="sw">'+s.g+'</span><span><span class="nm">'+s.n+'</span><br><span class="fm">'+s.f+'</span></span></button>';
+    }
+    h+='</div>';
+  }
+  box.innerHTML=h;
+  box.querySelectorAll('[data-sub]').forEach(b=>{
+    b.onclick=()=>{ selected=b.dataset.sub; markSel(); infoSub(SUB[selected]); hint("已选「"+SUB[selected].n+"」→ 点实验台把它加入容器"); };
+  });
+}
+function markSel(){
+  document.querySelectorAll('#tab-reagent .item').forEach(b=>b.classList.toggle('sel',b.dataset.sub===selected));
+}
+function buildGlass(){
+  const box=document.getElementById('tab-glass');
+  let h='<div class="group-title">🧰 反应容器（点击切换）</div><div class="item-grid">';
+  for(const g of GLASSES){
+    h+='<button class="item" data-glass="'+g.id+'"><span class="sw">'+g.e+'</span><span><span class="nm">'+g.n+'</span><br><span class="fm">'+g.d.slice(0,14)+'</span></span></button>';
+  }
+  h+='</div>';
+  h+='<div class="group-title">🔥 热源与附件</div><div class="btnrow">'
+   +'<button class="small-btn" id="g-lamp">🔥酒精灯(加热)</button>'
+   +'<button class="small-btn" id="g-rod">🥢玻璃棒(搅拌)</button>'
+   +'<button class="small-btn" id="g-tube">🩺导管+集气瓶</button>'
+   +'<button class="small-btn" id="g-cobalt">🔵蓝色钴玻璃</button>'
+   +'</div>';
+  h+='<div class="group-title">📋 操作要点</div><p style="font-size:12px;color:var(--sub);line-height:1.8">'
+   +'• <b>试管</b>：装液体不超过容积1/3，加热时试管口不能对着人<br>'
+   +'• <b>蒸发皿</b>：加热后用坩埚钳夹持，放在石棉网上<br>'
+   +'• <b>集气瓶</b>：做燃烧实验时瓶底要放少量水或细沙<br>'
+   +'• <b>蓝色钴玻璃</b>：观察钾的焰色时滤去钠的黄色<br></p>';
+  box.innerHTML=h;
+  box.querySelectorAll('[data-glass]').forEach(b=>{
+    b.onclick=()=>{ S.vessel=b.dataset.glass; const gg=GLASSES.find(x=>x.id===S.vessel);
+      markGlass(); toast("已换用"+gg.n+"："+gg.d); };
+  });
+  document.getElementById('g-lamp').onclick=()=>toggleHeat();
+  document.getElementById('g-rod').onclick=()=>{S.shaking=true;setTimeout(()=>S.shaking=false,1200);bub(6);toast("搅拌：加速溶解/反应，引流防溅")};
+  document.getElementById('g-tube').onclick=()=>{toast("导管+集气瓶：用于收集气体（向上/向下排空气法、排水法）");smoke(6,"#dde7ea")};
+  document.getElementById('g-cobalt').onclick=()=>{S.cobalt=!S.cobalt;toast(S.cobalt?"已放置蓝色钴玻璃：可滤去钠的黄色，观察钾的紫色焰色":"已移走蓝色钴玻璃")};
+}
+function markGlass(){
+  document.querySelectorAll('#tab-glass .item').forEach(b=>b.classList.toggle('sel',b.dataset.glass===S.vessel));
+}
+
+/* ===== 提示 ===== */
+function toast(text,eq,type){
+  const box=document.getElementById('toasts');
+  const d=document.createElement('div');
+  d.className='toast'+(type?' '+type:'');
+  d.innerHTML=text+(eq?'<span class="eq">'+eq+'</span>':'');
+  box.appendChild(d);
+  setTimeout(()=>d.remove(),4200);
+  if(box.children.length>4)box.firstChild.remove();
+}
+function hint(t){const h=document.getElementById('hint');if(t){h.textContent=t;h.classList.remove('hide')}else h.classList.add('hide')}
+
+/* ===== 加入物质 ===== */
+function addSub(id){
+  const s=SUB[id]; if(!s)return;
+  if(!S.items.some(i=>i.id===id))S.items.push({id:id,amt:amtVal()});
+  if(s.s==='aq'||s.s==='l'){
+    S.level=Math.min(150,S.level+18*(amtVal()/3));
+    S.liquid=mixColor(S.liquid,s.c,0.55);
+  }else if(s.s==='s'){
+    bub(5);
+    if(S.level>0&&!S.precip){/* 固体入液，暂不显示沉淀 */}
+  }else if(s.s==='g'){
+    bub(12);smoke(4,"#dde7ea");
+  }
+  updStatus();
+  hideHintFirst();
+  const tipMap={Na:"钠保存在煤油中，用镊子取、滤纸吸干煤油，切绿豆大小（不能太大！）",
+   H2SO4c:"浓硫酸有强腐蚀性，稀释时必须酸入水！",Cl2:"氯气有毒，在通风橱中操作，尾气用NaOH吸收",
+   K:"钾比钠更活泼，取用更需小心",HF:"氢氟酸剧毒，能腐蚀玻璃和骨骼"};
+  if(tipMap[id])toast("⚠️ "+tipMap[id],null,'warn');
+}
+function amtVal(){return parseInt(document.getElementById('r-amt').value)}
+function mixColor(a,b,t){
+  if(!a)return b;
+  const hx=c=>[parseInt(c.slice(1,3),16),parseInt(c.slice(3,5),16),parseInt(c.slice(5,7),16)];
+  const A=hx(a),B=hx(b);
+  const m=A.map((v,i)=>Math.round(v*(1-t)+B[i]*t));
+  return '#'+m.map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+let firstAdd=true;
+function hideHintFirst(){if(firstAdd){firstAdd=false;hint("再加一种试剂，然后点「反应」 or 直接加热/点燃")}}
+
+/* ===== 匹配反应 ===== */
+function condOK(r){
+  if(r.need==='fire')return S.fire||S.heating;
+  if(r.need==='heat')return S.temp>=100||S.heating;
+  if(r.need==='light')return S.lightOn;
+  if(r.need==='elec')return S.elec;
+  return true;
+}
+function currentIds(){
+  const ids=S.items.map(i=>i.id);
+  for(const id of S.items.map(i=>i.id)){const a=ALIAS[id];if(a&&!ids.includes(a))ids.push(a)}
+  const hasWater=S.items.some(i=>i.id==='H2O')||S.items.some(i=>{const x=SUB[i.id];return x&&x.s==='aq'});
+  if(hasWater&&!ids.includes('H2O'))ids.push('H2O');
+  return ids;
+}
+function findRx(){
+  const ids=currentIds();
+  let best=null,cand=null;
+  for(const r of RX){
+    if(!r.req.every(x=>ids.includes(x)))continue;
+    if(r.cat&&!ids.includes(r.cat))continue;
+    const score=r.req.length+(r.need?1.2:0)+(r.tmin?1:0);
+    if(condOK(r)&&(!r.tmin||S.temp>=r.tmin)){if(!best||score>best.score)best={r:r,score:score}}
+    else{if(!cand||score>cand.score)cand={r:r,score:score}}
+  }
+  return {best:best, cand:cand, ok:!!best};
+}
+function doReact(){
+  if(S.items.length<1){toast("先在「试剂」里选一种物质，再点实验台加入",null,'warn');return}
+  const res=findRx();
+  if(res.best&&res.ok)applyRx(res.best.r);
+  else if(res.cand){
+    const r=res.cand.r,need=r.need;
+    const msg={fire:"这组合能反应，但需要先「🔥点燃」！",heat:"这组合能反应，但需要先「🔥加热」！",
+      light:"这组合能反应，但需要「💡光照」条件！",elec:"这组合能反应，但需要「⚡通电」！"}[need]||"这组合需要更高温度（调高温滑块）";
+    toast("💡 "+msg,null,'warn');
+    if(r.tmin)toast("需要的温度：≥"+r.tmin+"℃（拖动温度滑块）",null,'warn');
+    infoCard(r,true);
+  }else{
+    toast("未匹配到明显反应。可能：①条件不够（试试加热/点燃）②这两种物质确实不反应 ③组合不在本实验库中",null,'warn');
+  }
+}
+function playFx(f){
+  if(!f)return;
+  if(f.gas)bub(f.gas*14,f.smoke);
+  if(f.precip){S.precip=f.precip;S.precipAmt=Math.min(5,(S.precipAmt||0)+1)}
+  if(f.color)S.liquid=f.color;
+  if(f.liquid){S.liquid=f.liquid;S.level=Math.max(S.level||0,34)}
+  if(f.smoke)smoke(9,f.smoke);
+  if(f.fog)smoke(13,"#ffffff");
+  if(f.flame){S.fire=true;S.flameColor=f.flame}
+  if(f.boom){boom(f.boom)}
+  if(f.spark){spark(55,"#ffb84a");debris(24,"#ff9a3c")}
+  if(f.light){S.flash=Math.max(S.flash,0.65);spark(34,"#fff3c4")}
+  if(f.flash){S.flash=1}
+  if(f.dissolve)S.precipAmt=0;
+  if(f.heat)S.temp=Math.min(1000,S.temp+f.heat);
+}
+function applyRx(r){
+  playFx(r.fx);
+  const con=r.con||r.req.filter(x=>x!==r.cat);
+  S.items=S.items.filter(i=>!(con.includes(i.id)||(ALIAS[i.id]&&con.includes(ALIAS[i.id])))||i.id==='H2O');
+  for(const pid of (r.pro||[])){
+    if(!SUB[pid]||pid==='H2O')continue;
+    if(!S.items.some(i=>i.id===pid))S.items.push({id:pid,amt:3});
+    const s=SUB[pid];
+    if((s.s==='aq'||s.s==='l')&&S.level<10){S.level=34;if(!r.liquid)S.liquid=s.c}
+  }
+  if(r.fx&&r.fx.dissolve)S.precipAmt=0;
+  S.safety=r.lv==='danger'?'⚠️危险':(r.lv==='warn'?'注意':'安全');
+  updStatus();
+  infoCard(r,false);
+  toast(r.ph[0]+(r.ph[1]?"；"+r.ph[1]:""),r.eq,r.lv==='danger'?'danger':(r.lv==='warn'?'warn':''));
+  if(r.lv==='danger')toast("⚠️ 危险实验！真实操作须教师指导、戴护目镜和手套",null,'danger');
+  document.querySelector('.tab[data-tab="info"]').click();
+}
+
+/* ===== 信息面板 ===== */
+function infoCard(r,pending){
+  const box=document.getElementById('info-panel');
+  let h='<div class="rx-card">';
+  h+='<div class="rx-eq">'+(r.eq||'—')+'</div>';
+  if(r.ion)h+='<div class="rx-line"><span class="k">离子式</span><span class="v">'+r.ion+'</span></div>';
+  h+='<div class="rx-line"><span class="k">'+(pending?'待触发':'反应类型')+'</span><span class="v">'+(r.tp||'—')+'</span></div>';
+  h+='<div style="margin-top:6px">';
+  for(const p of r.ph)h+='<div class="rx-line"><span class="k">·</span><span class="v">'+p+'</span></div>';
+  h+='</div>';
+  h+='<div style="margin-top:6px"><span class="tag '+(r.lv==='danger'?'hot':(r.lv==='warn'?'w':'ok'))+'">'+(r.lv==='danger'?'⚠️危险':(r.lv==='warn'?'注意通风':'安全'))+'</span>';
+  if(r.need)h+='<span class="tag w">条件：'+({fire:'点燃',heat:'加热',light:'光照',elec:'通电'}[r.need])+'</span>';
+  if(r.tmin)h+='<span class="tag w">≥'+r.tmin+'℃</span>';
+  if(r.cat&&SUB[r.cat])h+='<span class="tag">'+SUB[r.cat].n+'</span>';
+  h+='</div></div>';
+  h+='<div class="rx-card" style="border-color:#f6ad5555"><div style="color:var(--accent2);font-weight:700;font-size:12.5px;margin-bottom:4px">📌 考点提示</div>'
+   +'<div style="font-size:12px;line-height:1.7;color:var(--txt)">'+(r.tip||'—')+'</div></div>';
+  box.innerHTML=h;
+}
+function infoSub(s){
+  const box=document.getElementById('info-panel');
+  let h='<div class="rx-card"><div class="rx-eq">'+s.n+'　'+s.f+'</div>';
+  h+='<div class="rx-line"><span class="k">分类</span><span class="v">'+s.cat+'</span></div>';
+  h+='<div class="rx-line"><span class="k">状态</span><span class="v">'+({s:'固体',l:'液体',g:'气体',aq:'溶液'}[s.s])+'</span></div>';
+  h+='<div class="rx-line"><span class="k">酸碱性</span><span class="v">pH≈'+s.ph+'（'+(s.ph<7?'酸性':s.ph>7?'碱性':'中性')+'）</span></div>';
+  h+='</div>';
+  h+='<div class="rx-card"><div style="color:var(--accent);font-weight:700;margin-bottom:4px">性质</div>'
+   +'<div style="font-size:12px;line-height:1.7;color:var(--txt)">'+s.d+'</div></div>';
+  box.innerHTML=h;
+}
+
+/* ===== 状态栏 ===== */
+function updStatus(){
+  document.getElementById('st-items').textContent=S.items.length;
+  document.getElementById('st-fire').textContent=(S.heating||S.fire)?'有':'无';
+  document.getElementById('st-safe').textContent=S.safety;
+  const d=document.getElementById('st-dot');
+  d.style.background=S.safety==='⚠️危险'?'#fc5c7d':(S.safety==='注意'?'#f6e05e':'#68d391');
+  d.style.boxShadow='0 0 6px '+d.style.background;
+}
+
+/* ===== 条件控制 ===== */
+function toggleHeat(){
+  S.heating=!S.heating;
+  document.getElementById('b-heat').classList.toggle('on',S.heating);
+  if(S.heating){S.fire=false;
+    const t=parseInt(document.getElementById('r-temp').value);
+    if(t<300){document.getElementById('r-temp').value=300;document.getElementById('v-temp').textContent='300℃'}
+    toast("🔥 开始加热（酒精灯外焰温度约500℃）");
+  }else toast("已停止加热，温度逐渐下降");
+  updStatus();
+}
+function ignite(){
+  S.fire=true;S.heating=true;
+  document.getElementById('b-heat').classList.add('on');
+  const ids=currentIds();
+  let done=false;
+  for(const k in FLAME){if(ids.includes(k)&&ids.length<=3){
+    const f=FLAME[k];
+    S.flameColor=(k==='K'&&!S.cobalt)?f.c:f.c;
+    toast("🌈 焰色反应：",k+" → "+f.n+"火焰");
+    infoFlame(k,f);done=true;break}}
+  const r=findRx();
+  if(r.best&&r.ok){applyRx(r.best.r);return}
+  if(!done)toast("🔥 已点燃。若气体可燃会燃烧/爆鸣；固体可能燃烧");
+  playFx({flame:"#ffb84a",light:1});
+  updStatus();
+}
+function infoFlame(k,f){
+  const box=document.getElementById('info-panel');
+  let h='<div class="rx-card"><div class="rx-eq" style="color:'+f.c+'">焰色反应：'+f.n+'火焰</div>';
+  h+='<div class="rx-line"><span class="k">操作</span><span class="v">用铂丝/铁丝蘸取样品在酒精灯外焰灼烧（先洗净烧至无色）</span></div>';
+  h+='<div class="rx-line"><span class="k">本质</span><span class="v">物理变化——电子从高能级跃迁回低能级，以光的形式释放能量</span></div>';
+  h+='</div><div class="rx-card" style="border-color:#f6ad5555"><div style="color:var(--accent2);font-weight:700;margin-bottom:4px">📌 考点</div>'
+   +'<div style="font-size:12px;line-height:1.7">'+f.tip+'</div></div>';
+  h+='<div class="rx-card"><div style="color:var(--accent);font-weight:700;margin-bottom:6px">🌈 常见焰色速记</div>';
+  const rec=[['Na','黄色','#ffcc33'],['K','紫色(需钴玻璃)','#c77dff'],['Li','紫红色','#ff6a9a'],['Ca','砖红色','#ff7a3c'],['Cu','绿色','#3ce88a'],['Ba','黄绿色','#b6e84a'],['Sr','洋红色','#ff2a5a']];
+  for(const [a,b,c] of rec)h+='<div class="rx-line"><span class="k" style="color:'+c+'">'+a+'</span><span class="v">'+b+'</span></div>';
+  h+='</div>';
+  box.innerHTML=h;
+  document.querySelector('.tab[data-tab="info"]').click();
+}
+
+/* ===== 一键演示 ===== */
+function clearBench(full){
+  S.items=[];S.liquid=null;S.level=0;S.precip=null;S.precipAmt=0;
+  S.fire=false;S.heating=false;S.elec=false;S.lightOn=false;S.stopper=false;
+  S.flameColor="#ffb84a";S.safety="安全";S.gasAccum=0;
+  P=[];FLAMES=[];S.flash=0;
+  if(full!==false){S.temp=25;document.getElementById('r-temp').value=25;document.getElementById('v-temp').textContent='25℃'}
+  document.getElementById('b-heat').classList.remove('on');
+  document.getElementById('b-light').classList.remove('on');
+  document.getElementById('b-elec').classList.remove('on');
+  document.getElementById('b-stopper').classList.remove('on');
+  updStatus();
+}
+function demo(name){
+  clearBench();
+  const set=(v)=>{S.vessel=v};
+  const add=(...ids)=>{for(const i of ids)addSub(i)};
+  const run=()=>{setTimeout(()=>{const r=findRx();if(r.best&&r.ok)applyRx(r.best.r);else doReact()},420)};
+  const hot=(t)=>{S.temp=t;document.getElementById('r-temp').value=t;document.getElementById('v-temp').textContent=t+'℃'};
+  if(name==='na'){set('beaker');add('H2O','phth');add('Na');toast("演示：钠与水反应（浮熔游响红）");run()}
+  else if(name==='h2'){set('gasjar');add('H2','O2');S.fire=true;S.heating=true;toast("演示：氢气与氧气混合点燃 → 爆鸣","2H₂+O₂=(点燃)2H₂O",'danger');run()}
+  else if(name==='al'){set('dish');add('Fe2O3','Al');hot(900);S.fire=true;S.heating=true;toast("演示：铝热反应（镁条引燃，火星四射）","Fe₂O₃+2Al=(高温)2Fe+Al₂O₃",'danger');run()}
+  else if(name==='mg'){set('gasjar');add('Mg','O2');S.fire=true;S.heating=true;toast("演示：镁条在氧气中燃烧（耀眼白光）","2Mg+O₂=(点燃)2MgO",'danger');run()}
+  else if(name==='fe'){set('gasjar');add('Fe','O2');S.fire=true;S.heating=true;toast("演示：铁丝在氧气中燃烧（火星四射）","3Fe+2O₂=(点燃)Fe₃O₄",'danger');run()}
+  else if(name==='flame'){set('dish');flameShow()}
+  else if(name==='h2so4'){set('beaker');add('sucrose','H2SO4c');toast("演示：浓硫酸使蔗糖脱水炭化（黑面包）",null,'danger');run()}
+  else if(name==='na2o2'){set('testtube');add('Na2O2','H2O');toast("演示：过氧化钠与水反应放氧");run()}
+  else if(name==='nh3'){set('flask');add('NH3','H2O','phth');toast("演示：氨气喷泉实验（酚酞变红）");run()}
+  else if(name==='o2'){set('flask');add('H2O2','MnO2');hot(80);toast("演示：MnO₂催化H₂O₂分解制O₂","2H₂O₂=(MnO₂)2H₂O+O₂↑");run()}
+  else if(name==='cl2'){set('flask');add('MnO2','HCl');hot(350);S.heating=true;document.getElementById('b-heat').classList.add('on');toast("演示：MnO₂与浓盐酸加热制Cl₂","MnO₂+4HCl(浓)=(Δ)MnCl₂+Cl₂↑+2H₂O",'warn');run()}
+  else if(name==='co2'){set('flask');add('CaCO3','HCl');toast("演示：石灰石与稀盐酸制CO₂","CaCO₃+2HCl=CaCl₂+H₂O+CO₂↑");run()}
+  updStatus();
+}
+function flameShow(){
+  const seq=[['Na','#ffcc33'],['K','#c77dff'],['Cu','#3ce88a'],['Ca_m','#ff7a3c'],['BaCl2','#b6e84a'],['Li','#ff6a9a']];
+  let i=0;
+  S.heating=true;S.fire=true;
+  document.getElementById('b-heat').classList.add('on');
+  const step=()=>{
+    if(i>=seq.length){toast("焰色反应是<b>物理变化</b>，体现元素的性质");return}
+    const [id,c]=seq[i];
+    S.flameColor=c;
+    addSub(id);
+    S.items=[{id:id,amt:1}];
+    const f=FLAME[id];
+    toast("🌈 "+id+"：",f.n+"火焰");
+    infoFlame(id,f);
+    i++;setTimeout(step,2000);
+  };
+  toast("🌈 焰色反应演示开始（每2秒切换一种元素）");
+  step();
+}
+
+/* ===== 反应手册 ===== */
+function buildBook(){
+  const box=document.getElementById('book-list');
+  let h='';
+  RX.forEach((r,i)=>{
+    const nm=r.req.map(x=>SUB[x]?SUB[x].n:x).join(' + ');
+    h+='<button class="rx-item" data-i="'+i+'"><span class="t">'+(i+1)+'. '+nm+'</span>'
+      +'<span class="e">'+(r.eq||'')+'</span>'
+      +'<span class="p">'+r.ph[0]+'</span></button>';
+  });
+  box.innerHTML=h;
+  box.querySelectorAll('[data-i]').forEach(b=>{
+    b.onclick=()=>{
+      const r=RX[+b.dataset.i];
+      document.getElementById('modal-book').classList.remove('show');
+      clearBench();
+      S.vessel=(r.lv==='danger')?'dish':'testtube';
+      for(const id of r.req)if(SUB[id])addSub(id);
+      if(r.cat&&SUB[r.cat]&&!r.req.includes(r.cat))addSub(r.cat);
+      if(r.tmin){S.temp=r.tmin+50;document.getElementById('r-temp').value=S.temp;document.getElementById('v-temp').textContent=S.temp+'℃'}
+      if(r.need==='fire'){S.fire=true;S.heating=true;document.getElementById('b-heat').classList.add('on')}
+      if(r.need==='heat'){S.heating=true;if(S.temp<150){S.temp=320;document.getElementById('r-temp').value=320;document.getElementById('v-temp').textContent='320℃'}document.getElementById('b-heat').classList.add('on')}
+      if(r.need==='light'){S.lightOn=true;document.getElementById('b-light').classList.add('on')}
+      if(r.need==='elec'){S.elec=true;document.getElementById('b-elec').classList.add('on')}
+      setTimeout(()=>{const res=findRx();if(res.best&&res.ok)applyRx(res.best.r);else infoCard(r,true)},500);
+    };
+  });
+}
+
+/* ===== 事件绑定 ===== */
+function bind(){
+  // tab 切换
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.onclick=()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.tab-body').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('tab-'+t.dataset.tab).classList.add('active');
+    };
+  });
+  // 画布点击 = 加入选中试剂
+  cv.addEventListener('click',e=>{
+    if(!selected){toast("请先在右侧「试剂」里选一种物质",null,'warn');
+      if(window.innerWidth<=840)document.getElementById('aside').classList.add('open');
+      return;}
+    addSub(selected);
+    const s=SUB[selected];
+    toast("加入 "+s.n+"（"+s.f+"）");
+  });
+  document.getElementById('btn-clear').onclick=()=>{clearBench();toast("台面已清空")};
+  document.getElementById('b-reset').onclick=()=>{clearBench();toast("台面已重置")};
+  document.getElementById('btn-help').onclick=()=>document.getElementById('modal-help').classList.add('show');
+  document.getElementById('btn-book').onclick=()=>document.getElementById('modal-book').classList.add('show');
+  document.getElementById('b-react').onclick=doReact;
+  document.getElementById('b-heat').onclick=toggleHeat;
+  document.getElementById('b-ignite').onclick=ignite;
+  document.getElementById('b-stop').onclick=()=>{S.fire=false;S.heating=false;S.flameColor="#ffb84a";
+    document.getElementById('b-heat').classList.remove('on');toast("🧯 火焰已熄灭");updStatus()};
+  document.getElementById('b-shake').onclick=()=>{S.shaking=true;setTimeout(()=>S.shaking=false,900);bub(10);
+    toast("振荡：使反应物充分接触，加速反应")};
+  document.getElementById('b-light').onclick=()=>{S.lightOn=!S.lightOn;
+    document.getElementById('b-light').classList.toggle('on',S.lightOn);
+    toast(S.lightOn?"💡 强光照射（可引发H₂+Cl₂爆炸、HClO分解、AgCl变黑）":"已关闭光照");doReact()};
+  document.getElementById('b-elec').onclick=()=>{S.elec=!S.elec;
+    document.getElementById('b-elec').classList.toggle('on',S.elec);
+    toast(S.elec?"⚡ 通电（电解）":"已断电");if(S.elec)doReact()};
+  document.getElementById('b-catalyst').onclick=()=>{addSub('MnO2');toast("加入 MnO₂（催化剂/氧化剂）")};
+  document.getElementById('b-stopper').onclick=()=>{S.stopper=!S.stopper;
+    document.getElementById('b-stopper').classList.toggle('on',S.stopper);
+    toast(S.stopper?"已塞橡皮塞：封闭体系，气体无法逸出（注意压强！）":"已拔掉橡皮塞")};
+  // 滑块
+  const rt=document.getElementById('r-temp');
+  rt.oninput=()=>{document.getElementById('v-temp').textContent=rt.value+'℃'};
+  const ra=document.getElementById('r-amt');
+  ra.oninput=()=>{document.getElementById('v-amt').textContent=['极少量','少量','中等','较多','过量'][ra.value-1]};
+  // 演示
+  const dm={na:'na',h2:'h2',al:'al',mg:'mg',fe:'fe',flame:'flame',h2so4:'h2so4',na2o2:'na2o2',nh3:'nh3',o2:'o2',cl2:'cl2',co2:'co2'};
+  for(const k in dm){const el=document.getElementById('d-'+k);if(el)el.onclick=()=>demo(dm[k])}
+  // 移动端
+  document.getElementById('mob-toggle').onclick=()=>document.getElementById('aside').classList.toggle('open');
+  // 键盘
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT')return;
+    if(e.key==='r'||e.key==='R')doReact();
+    if(e.key==='c'||e.key==='C')clearBench();
+    if(e.key===' ') {e.preventDefault();toggleHeat();}
+  });
+}
+
+/* ===== 温度演化 ===== */
+setInterval(()=>{
+  const target=parseInt(document.getElementById('r-temp').value);
+  if(S.heating&&S.temp<target)S.temp=Math.min(target,S.temp+14);
+  if(!S.heating&&S.temp>25)S.temp=Math.max(25,S.temp-6);
+  document.getElementById('st-temp').textContent=Math.round(S.temp);
+},120);
+
+/* ===== 启动 ===== */
+resize();
+buildReagents();
+buildGlass();
+buildBook();
+bind();
+markGlass();
+updStatus();
+render();
+setTimeout(()=>{if(!firstAdd)return;},100);
+
+</script>
+</body>
+</html>
