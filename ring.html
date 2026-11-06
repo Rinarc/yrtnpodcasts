@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>校园铃声播放系统</title>
+<style>
+  :root{
+    --text:#0f172a;
+    --muted:#64748b;
+    --line:#e2e8f0;
+    --radius:18px;
+
+    /* 南洋中学 · 深棕主题 */
+    --accent:#711419;
+    --accent2:#711419;
+    --accent-text:#4338ca;
+    --accent-soft:#eef2ff;
+    --accent-border:#c7d2fe;
+    --focus:#a5b4fc;
+    --ring:rgba(99,102,241,.15);
+    --glow:rgba(79,70,229,.42);
+    --ambient1:rgba(99,102,241,.18);
+    --ambient2:rgba(245,158,11,.14);
+  }
+  body[data-group="fy"]{
+    /* 汾阳中学 · 黄蓝主题 */
+    --accent:#1A91F2;
+    --accent2:#DCE843;
+    --accent-text:#0f766e;
+    --accent-soft:#f0fdfa;
+    --accent-border:#99f6e4;
+    --focus:#5eead4;
+    --ring:rgba(20,184,166,.16);
+    --glow:rgba(13,148,136,.42);
+    --ambient1:rgba(20,184,166,.20);
+    --ambient2:rgba(251,191,36,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;
+    padding:24px;
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(1100px 560px at 8% -12%, #dbeafe 0%, transparent 60%),
+      radial-gradient(900px 560px at 108% 6%, #fef3c7 0%, transparent 55%),
+      #f1f5f9;
+    transition:background .5s;
+  }
+  .ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .ambient span{
+    position:absolute;border-radius:50%;filter:blur(72px);opacity:.8;
+    transition:background .6s;animation:drift 18s ease-in-out infinite alternate;
+  }
+  .ambient span:nth-child(1){width:420px;height:420px;top:-130px;left:-90px;background:var(--ambient1)}
+  .ambient span:nth-child(2){width:380px;height:380px;bottom:-150px;right:-100px;background:var(--ambient2);animation-delay:-7s}
+  @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(40px,-32px) scale(1.12)}}
+
+  .wrap{max-width:1120px;margin:0 auto;position:relative;z-index:1;animation:fadeIn .5s ease both}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+  /* ---------- 顶栏 ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{
+    position:relative;
+    width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:23px;color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:0 10px 22px -8px var(--glow);
+    transition:background .4s,box-shadow .4s;
+  }
+  .logo::after{
+    content:'';position:absolute;inset:-7px;border-radius:21px;
+    border:2px solid var(--accent);opacity:0;pointer-events:none;
+  }
+  body.ringing .logo::after{animation:ripple 1.25s ease-out infinite}
+  @keyframes ripple{0%{transform:scale(.86);opacity:.6}100%{transform:scale(1.45);opacity:0}}
+  h1{font-size:20px;letter-spacing:.5px}
+  .sub{font-size:11px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:2px}
+  .status{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 16px;border-radius:999px;font-size:13px;color:var(--muted);
+    background:#fff;border:1px solid var(--line);
+    box-shadow:0 2px 10px rgba(15,23,42,.05);
+    transition:.3s;max-width:100%;
+  }
+  .status::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.6;flex:0 0 auto}
+  .status span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .status.up{color:var(--accent-text);border-color:var(--accent-border);background:var(--accent-soft)}
+  .status.down{color:#0369a1;border-color:#bae6fd;background:#f0f9ff}
+  .status.prepare{color:#b45309;border-color:#fde68a;background:#fffbeb}
+  .status.warn{color:#b45309;border-color:#fde68a;background:#fffbeb}
+  .status.ok{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
+
+  /* ---------- 音源切换条 ---------- */
+  .source-card{
+    display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+    padding:16px 20px;margin-bottom:20px;border-radius:var(--radius);
+    background:linear-gradient(120deg,#fff 10%,var(--accent-soft));
+    border:1px solid var(--accent-border);
+    box-shadow:0 16px 36px -24px var(--glow);
+    transition:background .45s,border-color .45s,box-shadow .45s;
+  }
+  .source-info{display:flex;align-items:center;gap:12px;min-width:0}
+  .source-icon{
+    width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:0 8px 18px -10px var(--glow);flex:0 0 auto;transition:background .4s;
+  }
+  .source-info h2{font-size:15px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .source-info p{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .badge{font-size:10.5px;padding:3px 9px;border-radius:999px;background:#f1f5f9;color:var(--muted);font-weight:600;white-space:nowrap;transition:.3s}
+  .badge.ok{background:#dcfce7;color:#15803d}
+  .badge.warn{background:#fef3c7;color:#b45309}
+
+  .group-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-width:320px;max-width:480px}
+  .group-btn{
+    position:relative;display:flex;align-items:center;gap:10px;text-align:left;
+    padding:11px 13px;border-radius:14px;border:1px solid var(--line);background:#fff;
+    cursor:pointer;font-family:inherit;color:var(--text);
+    transition:transform .18s,box-shadow .25s,background .35s,border-color .35s,color .35s;
+  }
+  .group-btn:hover{transform:translateY(-2px);border-color:var(--accent-border)}
+  .group-btn.active{
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border-color:transparent;color:#fff;
+    box-shadow:0 12px 24px -12px var(--glow);
+  }
+  .g-emoji{font-size:22px;line-height:1;flex:0 0 auto}
+  .g-text{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .g-text b{font-size:13.5px;white-space:nowrap}
+  .g-text small{font-size:10px;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .g-mini{margin-left:auto;font-size:10px;font-weight:700;white-space:nowrap;opacity:.75;flex:0 0 auto}
+  .g-mini.ok{color:#15803d}
+  .g-mini.bad{color:#dc2626}
+  .group-btn.active .g-mini{color:#fff;opacity:.9}
+  .g-check{display:none;font-size:12px;margin-left:2px}
+  .group-btn.active .g-check{display:block}
+
+  /* ---------- 布局 ---------- */
+  .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:20px}
+  @media (max-width:880px){
+    .grid{grid-template-columns:1fr}
+    .source-card{flex-direction:column;align-items:stretch}
+    .group-switch{max-width:none;min-width:0;width:100%}
+  }
+  .card{
+    background:#fff;border-radius:var(--radius);padding:24px;
+    border:1px solid rgba(226,232,240,.9);
+    box-shadow:0 14px 34px -18px rgba(15,23,42,.28);
+    transition:box-shadow .3s,border-color .3s;
+  }
+  .card:hover{box-shadow:0 20px 42px -20px rgba(15,23,42,.34);border-color:var(--accent-border)}
+
+  /* ---------- 时钟卡 ---------- */
+  .clock-card{display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center}
+  .date{font-size:14px;color:var(--muted);letter-spacing:1px}
+  .clock{
+    font-size:clamp(46px,9vw,74px);font-weight:700;letter-spacing:2px;line-height:1.05;
+    font-variant-numeric:tabular-nums;
+    background:linear-gradient(135deg,#1e293b,var(--accent));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 6px 14px var(--ring));transition:background .45s;
+  }
+  .next-info{
+    font-size:13px;color:var(--muted);padding:8px 18px;border-radius:999px;
+    background:#f8fafc;border:1px dashed var(--line);
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .volume-row{display:flex;align-items:center;gap:10px;width:100%;max-width:320px;font-size:14px;color:var(--muted)}
+  input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
+
+  .actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+  .actions .btn{font-size:14px;padding:13px 8px;gap:6px}
+  @media (max-width:440px){ .actions{grid-template-columns:1fr} }
+
+  .btn{
+    border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:15px;
+    border-radius:14px;padding:14px 18px;color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .15s, filter .2s, background .2s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.up{background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 12px 24px -12px var(--glow)}
+  .btn.down{background:linear-gradient(135deg,#0284c7,#0ea5e9);box-shadow:0 12px 24px -12px rgba(14,165,233,.95)}
+  .btn.prepare{background:linear-gradient(135deg,#d97706,#f59e0b);box-shadow:0 12px 24px -12px rgba(245,158,11,.95)}
+  .btn.up:hover,.btn.down:hover,.btn.prepare:hover{filter:brightness(1.07)}
+
+  .bottom-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;flex-wrap:wrap}
+
+  .btn.ghost{
+    background:#f8fafc;color:#475569;border:1px solid var(--line);
+    box-shadow:none;font-weight:500;font-size:13.5px;padding:10px 15px;border-radius:10px;
+  }
+  .btn.ghost:hover{background:#f1f5f9}
+  .btn.ghost.danger{color:#dc2626;border-color:#fecaca;background:#fff}
+  .btn.ghost.danger:hover{background:#fef2f2}
+  .btn.ghost.accent{color:#b45309;border-color:#fde68a;background:#fffbeb}
+  .btn.ghost.accent:hover{background:#fef3c7}
+  .btn.ghost.primary{color:var(--accent-text);border-color:var(--accent-border);background:var(--accent-soft)}
+  .btn.ghost.primary:hover{filter:brightness(.97)}
+  .btn.small{padding:9px 18px;font-size:14px;border-radius:10px;background:var(--accent);box-shadow:none}
+  .btn.small:hover{filter:brightness(1.07)}
+
+  /* 音频源状态条 */
+  .src-bar{
+    display:flex;gap:14px;flex-wrap:wrap;justify-content:center;
+    font-size:12.5px;color:var(--muted);width:100%;
+    padding-top:14px;border-top:1px dashed var(--line);
+  }
+  .src-item{display:inline-flex;align-items:center;gap:6px}
+  .src-item code,.file-row code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+    color:var(--accent-text);background:var(--accent-soft);padding:2px 6px;border-radius:6px;
+    transition:background .4s,color .4s;
+  }
+  .src-item b{font-weight:600;color:var(--muted);font-size:11.5px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1;flex:0 0 auto;transition:.3s}
+  .dot.ok{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.22)}
+  .dot.bad{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.2)}
+  .dot.loading{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.2)}
+
+  /* ---------- 开关 ---------- */
+  .switch{display:inline-flex;align-items:center;gap:9px;cursor:pointer;user-select:none}
+  .switch input{display:none}
+  .slider{
+    width:44px;height:24px;border-radius:999px;background:#cbd5e1;position:relative;
+    transition:.25s;flex:0 0 auto;
+  }
+  .slider::after{
+    content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.25s;
+  }
+  .switch input:checked + .slider{background:var(--accent)}
+  .switch input:checked + .slider::after{transform:translateX(20px)}
+  .switch-text{font-size:14px;color:#475569}
+
+  /* ---------- 作息表 ---------- */
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .card-head h2{font-size:16px}
+  .count{font-size:11px;color:var(--muted);font-weight:600;background:#f1f5f9;padding:3px 10px;border-radius:999px;margin-left:8px;vertical-align:2px}
+  .add-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  input[type=time],select,input[type=text],input[type=number]{
+    font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--text);outline:none;transition:.2s;
+  }
+  input[type=time]:focus,select:focus,input[type=text]:focus,input[type=number]:focus{
+    border-color:var(--focus);box-shadow:0 0 0 3px var(--ring);
+  }
+  input[type=time]{width:112px}
+  input[type=text]{flex:1;min-width:88px}
+  input[type=number]{width:100%}
+
+  .list{list-style:none;max-height:400px;overflow-y:auto;padding-right:4px}
+  .list::-webkit-scrollbar{width:6px}
+  .list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+
+  .item{
+    display:flex;align-items:center;gap:10px;padding:11px 14px;margin-bottom:8px;
+    border:1px solid var(--line);border-radius:12px;background:#fff;transition:.2s;
+  }
+  .item:hover{border-color:var(--accent-border);background:#fafaff}
+  .item.past{opacity:.42}
+  .item.active{
+    border-color:var(--accent-border);background:var(--accent-soft);
+    box-shadow:0 0 0 3px var(--ring);
+  }
+  .item.active.prepare{
+    border-color:#fcd34d;background:#fffbeb;
+    box-shadow:0 0 0 3px rgba(245,158,11,.16);
+  }
+  .item .time{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;min-width:52px}
+  .tag{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+  .tag.up{background:var(--accent-soft);color:var(--accent-text)}
+  .tag.down{background:#e0f2fe;color:#0369a1}
+  .tag.prepare{background:#fef3c7;color:#b45309}
+  .label{flex:1;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .del{
+    border:none;background:transparent;color:#cbd5e1;cursor:pointer;
+    font-size:14px;padding:4px 7px;border-radius:8px;transition:.2s;line-height:1;
+  }
+  .del:hover{color:#ef4444;background:#fef2f2}
+  .empty{text-align:center;color:var(--muted);font-size:14px;padding:34px 0}
+
+  .card-foot{display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);flex-wrap:wrap}
+
+  /* ---------- 全天候排课面板 ---------- */
+  .auto-panel{
+    margin-bottom:14px;
+    padding:16px;
+    border-radius:14px;
+    background:linear-gradient(135deg,var(--accent-soft),#f8fafc);
+    border:1px solid var(--accent-border);
+    animation:slideDown .3s ease;transition:background .4s,border-color .4s;
+  }
+  .auto-panel[hidden]{display:none}
+  @keyframes slideDown{ from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+  .auto-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .auto-head h3{font-size:14px;color:var(--accent-text);display:flex;align-items:center;gap:6px}
+  .auto-close{
+    border:none;background:transparent;cursor:pointer;color:#94a3b8;
+    font-size:16px;padding:2px 6px;border-radius:6px;line-height:1;transition:.2s;
+  }
+  .auto-close:hover{background:var(--accent-soft);color:var(--accent-text)}
+
+  .auto-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:480px){ .auto-grid{grid-template-columns:1fr} }
+  .auto-grid label{
+    display:flex;flex-direction:column;gap:4px;
+    font-size:11.5px;color:#64748b;font-weight:500;
+  }
+  .auto-grid input{font-size:13px;padding:7px 9px;border-radius:8px}
+  .auto-grid input[type=time]{width:100%}
+
+  .auto-preview{
+    font-size:12px;color:var(--accent-text);margin-top:10px;padding:8px 12px;
+    background:#fff;border-radius:8px;border:1px dashed var(--accent-border);
+    line-height:1.6;
+  }
+  .auto-preview.error{color:#b45309;border-color:#fde68a;background:#fffbeb}
+
+  .auto-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .auto-actions .btn{flex:1;min-width:120px;font-size:13px;padding:10px 12px;border-radius:10px}
+
+  .tip{margin-top:18px;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.9}
+  .tip code{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* ---------- 解锁遮罩 ---------- */
+  .overlay{
+    position:fixed;inset:0;z-index:9999;
+    display:grid;place-items:center;padding:20px;
+    background:rgba(15,23,42,.58);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    transition:opacity .35s;
+  }
+  .overlay.hidden{opacity:0;pointer-events:none}
+  .overlay-card{
+    background:#fff;border-radius:24px;padding:32px 36px;text-align:center;
+    box-shadow:0 30px 70px -20px rgba(15,23,42,.5);
+    max-width:410px;width:100%;
+    animation:pop .35s cubic-bezier(.2,1.2,.4,1);
+  }
+  @keyframes pop{ from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+  .overlay-icon{font-size:48px;margin-bottom:8px;animation:float 3s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .overlay-card h2{font-size:19px;margin-bottom:8px}
+  .overlay-card p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:14px}
+  .ov-label{font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:8px}
+  .ov-switch{display:flex;gap:8px;justify-content:center;margin-bottom:18px}
+  .ov-group-btn{
+    flex:1;padding:9px 8px;border-radius:10px;border:1px solid var(--line);background:#fff;
+    font-family:inherit;font-size:12.5px;color:var(--muted);cursor:pointer;transition:.25s;
+  }
+  .ov-group-btn.active{
+    background:var(--accent-soft);border-color:var(--accent-border);
+    color:var(--accent-text);font-weight:700;box-shadow:0 0 0 3px var(--ring);
+  }
+  .file-list{display:flex;flex-direction:column;gap:7px;margin-bottom:20px;font-size:12.5px;color:var(--muted)}
+  .file-row{display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn.big{
+    width:100%;padding:15px;font-size:16px;border-radius:14px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    box-shadow:0 12px 26px -12px var(--glow);
+  }
+  .btn.big:hover{filter:brightness(1.07)}
+
+  /* ---------- 播放动画 ---------- */
+  @keyframes shake{
+    0%,100%{transform:rotate(0)}
+    25%{transform:rotate(-13deg)}
+    75%{transform:rotate(13deg)}
+  }
+  body.ringing .logo{animation:shake .6s ease-in-out infinite}
+  body.ringing.prepare-mode .logo{background:linear-gradient(135deg,#d97706,#f59e0b)}
+
+  @media (max-width:520px){
+    body{padding:14px}
+    .overlay-card{padding:28px 22px}
+    .group-switch{grid-template-columns:1fr}
+    .card{padding:18px}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body data-group="ny">
+
+<div class="ambient" aria-hidden="true"><span></span><span></span></div>
+
+<!-- ============ 声音解锁遮罩 ============ -->
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="overlay-icon">🔔</div>
+    <h2>点击进入铃声系统</h2>
+    <p>浏览器要求先与页面交互一次，之后才能自动播放声音。</p>
+    <div class="ov-label">选择铃声音源 · 可在进入后随时切换</div>
+    <div class="ov-switch" id="ovSwitch">
+      <button class="ov-group-btn" data-group="fy" type="button">上海市汾阳中学</button>
+      <button class="ov-group-btn active" data-group="ny" type="button">上海市南洋中学</button>
+    </div>
+    <div class="file-list">
+      <div class="file-row"><span class="dot loading" id="ovDotUp"></span><code id="ovFileUp">up-ny.mp3</code><span>上课铃</span></div>
+      <div class="file-row"><span class="dot loading" id="ovDotDown"></span><code id="ovFileDown">down-ny.mp3</code><span>下课铃</span></div>
+      <div class="file-row"><span class="dot loading" id="ovDotPrepare"></span><code id="ovFilePrepare">prepare-ny.mp3</code><span>预备铃</span></div>
+    </div>
+    <button class="btn big" id="btnUnlock" type="button">进入系统 · <span id="ovSchool">南洋中学</span></button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🔔</div>
+      <div>
+        <h1 id="brandTitle">校园铃声播放系统 · 南洋中学</h1>
+        <p class="sub" id="brandSub">Campus Bell System · NANYANG</p>
+      </div>
+    </div>
+    <div class="status" id="status"><span id="statusText">系统待机</span></div>
+  </header>
+
+  <!-- ============ 双校音源切换 ============ -->
+  <section class="source-card">
+    <div class="source-info">
+      <div class="source-icon">🎧</div>
+      <div>
+        <h2>铃声音源 <span class="badge" id="srcSummary">检测中…</span></h2>
+        <p id="srcDesc">当前音源：上海市南洋中学</p>
+      </div>
+    </div>
+    <div class="group-switch" id="groupSwitch">
+      <button class="group-btn" data-group="fy" type="button" aria-pressed="false">
+        <span class="g-emoji"></span>
+        <span class="g-text"><b>上海市汾阳中学</b><small>Shanghai Fenyang Middle School</small></span>
+        <span class="g-mini" id="miniFy">…</span><span class="g-check">✓</span>
+      </button>
+      <button class="group-btn active" data-group="ny" type="button" aria-pressed="true">
+        <span class="g-emoji"></span>
+        <span class="g-text"><b>上海市南洋中学</b><small>Shanghai Nanyang High School</small></span>
+        <span class="g-mini" id="miniNy">…</span><span class="g-check">✓</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="grid">
+
+    <!-- ============ 左：时钟与手动控制 ============ -->
+    <section class="card clock-card">
+      <div class="date" id="date">——</div>
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="next-info" id="nextInfo">下一条：--</div>
+
+      <div class="volume-row">
+        <span>🔊</span>
+        <input type="range" id="volume" min="0" max="100" value="80" />
+        <span id="volVal">80%</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn up"      id="btnUp">🎵 上课铃</button>
+        <button class="btn down"    id="btnDown">🎶 下课铃</button>
+        <button class="btn prepare" id="btnPrepare">⏰ 预备铃</button>
+      </div>
+
+      <div class="bottom-row">
+        <button class="btn ghost" id="btnStop">⏹ 停止播放</button>
+        <label class="switch">
+          <input type="checkbox" id="autoToggle" checked />
+          <span class="slider"></span>
+          <span class="switch-text">自动播放</span>
+        </label>
+      </div>
+
+      <!-- 音频加载状态 -->
+      <div class="src-bar">
+        <span class="src-item"><span class="dot loading" id="dotUp"></span><code id="fileUp">up-ny.mp3</code><b id="txtUp">检测中…</b></span>
+        <span class="src-item"><span class="dot loading" id="dotDown"></span><code id="fileDown">down-ny.mp3</code><b id="txtDown">检测中…</b></span>
+        <span class="src-item"><span class="dot loading" id="dotPrepare"></span><code id="filePrepare">prepare-ny.mp3</code><b id="txtPrepare">检测中…</b></span>
+      </div>
+    </section>
+
+    <!-- ============ 右：作息时间表 ============ -->
+    <section class="card schedule-card">
+      <div class="card-head">
+        <h2>作息时间表 <span class="count" id="listCount">0 条</span></h2>
+      </div>
+
+      <div class="add-row">
+        <input type="time" id="newTime" />
+        <select id="newType">
+          <option value="up">上课铃</option>
+          <option value="down">下课铃</option>
+          <option value="prepare">预备铃</option>
+        </select>
+        <input type="text" id="newLabel" placeholder="备注（可选）" maxlength="12" />
+        <button class="btn small" id="btnAdd">添加</button>
+      </div>
+
+      <!-- ===== 全天候排课面板 ===== -->
+      <div class="auto-panel" id="autoPanel" hidden>
+        <div class="auto-head">
+          <h3>📅 全天候智能排课</h3>
+          <button class="auto-close" id="btnCloseAuto" title="关闭">✕</button>
+        </div>
+
+        <div class="auto-grid">
+          <label>开始时间
+            <input type="time" id="autoStart" value="08:00" />
+          </label>
+          <label>结束时间
+            <input type="time" id="autoEnd" value="15:40" />
+          </label>
+          <label>每节课时长（分钟）
+            <input type="number" id="autoLesson" value="45" min="5" max="180" />
+          </label>
+          <label>课间休息（分钟）
+            <input type="number" id="autoBreak" value="10" min="0" max="60" />
+          </label>
+          <label>预备铃提前（分钟，0=不生成）
+            <input type="number" id="autoPrepare" value="2" min="0" max="30" />
+          </label>
+          <label>最后一节允许延后（分钟）
+            <input type="number" id="autoTolerance" value="0" min="0" max="60" />
+          </label>
+        </div>
+
+        <div class="auto-preview" id="autoPreview">调整参数后，将实时显示排课预览</div>
+
+        <div class="auto-actions">
+          <button class="btn ghost primary" id="btnGenAuto">➕ 追加生成</button>
+          <button class="btn ghost accent" id="btnReplaceAuto">🔄 清空后生成</button>
+        </div>
+      </div>
+
+      <ul class="list" id="list"></ul>
+
+      <div class="card-foot">
+        <button class="btn ghost primary" id="btnOpenAuto">📅 全天候排课</button>
+        <button class="btn ghost accent" id="btnGenPrepare">⏰ 补全预备铃</button>
+        <button class="btn ghost" id="btnReset">恢复默认</button>
+        <button class="btn ghost danger" id="btnClear">清空全部</button>
+      </div>
+    </section>
+
+  </div>
+
+  <p class="tip">
+    本网站<strong>仅供娱乐</strong>
+  </p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ========================================================
+   *  配置：两组学校音源
+   *  up = 上课铃 / down = 下课铃 / prepare = 预备铃
+   * ====================================================== */
+  const TYPE_INFO = {
+    up:      { name: '上课铃', icon: '🎵' },
+    down:    { name: '下课铃', icon: '🎶' },
+    prepare: { name: '预备铃', icon: '⏰' }
+  };
+  const TYPES = Object.keys(TYPE_INFO);
+
+  const GROUPS = [
+    {
+      id: 'fy', tag: 'FY', en: 'FENYANG', emoji: '🏫',
+      name: '上海市汾阳中学', short: '汾阳中学',
+      files: { up: 'up-fy.mp3', down: 'down-fy.mp3', prepare: 'prepare-fy.mp3' }
+    },
+    {
+      id: 'ny', tag: 'NY', en: 'NANYANG', emoji: '🎓',
+      name: '上海市南洋中学', short: '南洋中学',
+      files: { up: 'up-ny.mp3', down: 'down-ny.mp3', prepare: 'prepare-ny.mp3' },
+      legacy: { up: 'up.mp3', down: 'down.mp3', prepare: 'prepare.mp3' }
+    }
+  ];
+  const GROUP_MAP = {};
+  GROUPS.forEach(g => { GROUP_MAP[g.id] = g; });
+
+  const STORAGE_KEY  = 'campus-bell-schedule-v5';
+  const SETTINGS_KEY = 'campus-bell-settings-v5';
+  const AUTO_KEY     = 'campus-bell-auto-v1';
+
+  const DEFAULT_SCHEDULE = [
+    { time: '07:58', type: 'prepare', label: '第一节预备' },
+    { time: '08:00', type: 'up',      label: '第一节' },
+    { time: '08:45', type: 'down',    label: '第一节下课' },
+    { time: '08:53', type: 'prepare', label: '第二节预备' },
+    { time: '08:55', type: 'up',      label: '第二节' },
+    { time: '09:40', type: 'down',    label: '第二节下课' },
+    { time: '09:58', type: 'prepare', label: '第三节预备' },
+    { time: '10:00', type: 'up',      label: '第三节' },
+    { time: '10:45', type: 'down',    label: '第三节下课' },
+    { time: '10:53', type: 'prepare', label: '第四节预备' },
+    { time: '10:55', type: 'up',      label: '第四节' },
+    { time: '11:40', type: 'down',    label: '上午放学' },
+    { time: '13:58', type: 'prepare', label: '第五节预备' },
+    { time: '14:00', type: 'up',      label: '第五节' },
+    { time: '14:45', type: 'down',    label: '第五节下课' },
+    { time: '14:53', type: 'prepare', label: '第六节预备' },
+    { time: '14:55', type: 'up',      label: '第六节' },
+    { time: '15:40', type: 'down',    label: '下午放学' }
+  ];
+
+  const WEEK = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+
+  /* ========================================================
+   *  DOM
+   * ====================================================== */
+  const $ = id => document.getElementById(id);
+  const clockEl   = $('clock');
+  const dateEl    = $('date');
+  const nextEl    = $('nextInfo');
+  const statusEl  = $('status');
+  const listEl    = $('list');
+  const volEl     = $('volume');
+  const volValEl  = $('volVal');
+  const autoEl    = $('autoToggle');
+  const newTimeEl = $('newTime');
+  const newTypeEl = $('newType');
+  const newLabelEl= $('newLabel');
+  const overlay   = $('overlay');
+
+  const autoPanel   = $('autoPanel');
+  const autoStart   = $('autoStart');
+  const autoEnd     = $('autoEnd');
+  const autoLesson  = $('autoLesson');
+  const autoBreak   = $('autoBreak');
+  const autoPrepare = $('autoPrepare');
+  const autoTol     = $('autoTolerance');
+  const autoPreview = $('autoPreview');
+
+  /* ========================================================
+   *  状态
+   * ====================================================== */
+  let schedule    = [];
+  let vol         = 80;
+  let autoEnabled = true;
+  let activeGroup = 'ny';
+  let unlocked    = false;
+  let unlockTask  = null;
+  let currentPlay = null;
+  let currentAudio= null;
+  const firedKeys = new Set();
+  const groupReady= new Set();
+  let lastDayKey  = '';
+  let lastSecond  = -1;
+
+  /* ========================================================
+   *  工具
+   * ====================================================== */
+  const pad = n => String(n).padStart(2, '0');
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+  const nowHHMM = () => { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+
+  function toMinutes(hhmm) {
+    if (!hhmm || !/^\d{1,2}:\d{2}$/.test(hhmm)) return null;
+    const [h, m] = hhmm.split(':').map(Number);
+    if (h > 23 || m > 59) return null;
+    return h * 60 + m;
+  }
+
+  function toHHMM(mins) {
+    mins = ((Math.round(mins) % 1440) + 1440) % 1440;
+    return pad(Math.floor(mins / 60)) + ':' + pad(mins % 60);
+  }
+
+  function minusMinutes(hhmm, m) {
+    return toHHMM(toMinutes(hhmm) - m);
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => (
+      { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+    ));
+  }
+
+  function setStatus(text, cls) {
+    $('statusText').textContent = text;
+    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  /* ========================================================
+   *  音频对象：两组 × 三路，独立检测
+   * ====================================================== */
+  const AUDIO = {}, fileState = {}, fileMsg = {}, legacyUsed = {};
+
+  GROUPS.forEach(g => {
+    AUDIO[g.id] = {};
+    fileState[g.id] = { up: 'loading', down: 'loading', prepare: 'loading' };
+    fileMsg[g.id]   = { up: '检测中…', down: '检测中…', prepare: '检测中…' };
+    legacyUsed[g.id]= { up: false, down: false, prepare: false };
+
+    TYPES.forEach(type => {
+      const a = new Audio(g.files[type]);
+      a.preload = 'auto';
+
+      a.addEventListener('canplaythrough', () => {
+        setFileState(g.id, type, 'ok', legacyUsed[g.id][type] ? '已就绪·旧文件' : '已就绪');
+      });
+
+      a.addEventListener('error', () => {
+        // 南洋组兼容旧的 up/down/prepare.mp3
+        if (g.legacy && !legacyUsed[g.id][type]) {
+          legacyUsed[g.id][type] = true;
+          a.src = g.legacy[type];
+          a.load();
+          if (g.id === activeGroup) paintFileState(type);
+          return;
+        }
+        setFileState(g.id, type, 'bad', '未找到');
+      });
+
+      a.addEventListener('ended', () => { if (a === currentAudio) onEnded(); });
+      AUDIO[g.id][type] = a;
+    });
+  });
+
+  function activeFile(type) {
+    const a = AUDIO[activeGroup] && AUDIO[activeGroup][type];
+    const fallback = GROUP_MAP[activeGroup].files[type];
+    if (!a || !a.src) return fallback;
+    try { return decodeURIComponent(a.src.split('/').pop()) || fallback; }
+    catch (e) { return fallback; }
+  }
+
+  function setFileState(gid, type, state, msg) {
+    fileState[gid][type] = state;
+    if (msg !== undefined) fileMsg[gid][type] = msg;
+    if (gid === activeGroup) paintFileState(type);
+    updateMini();
+    updateSummary();
+  }
+
+  function paintFileState(type) {
+    const c = cap(type);
+    const st = fileState[activeGroup][type];
+    const cls = 'dot ' + (st === 'ok' ? 'ok' : st === 'bad' ? 'bad' : 'loading');
+    const dot = $('dot' + c), txt = $('txt' + c), ovDot = $('ovDot' + c);
+    if (dot)   dot.className = cls;
+    if (ovDot) ovDot.className = cls;
+    if (txt)   txt.textContent = fileMsg[activeGroup][type];
+
+    const f = activeFile(type);
+    if ($('file' + c))    $('file' + c).textContent = f;
+    if ($('ovFile' + c))  $('ovFile' + c).textContent = f;
+  }
+
+  function updateMini() {
+    GROUPS.forEach(g => {
+      const el = $('mini' + cap(g.id));
+      if (!el) return;
+      const ok  = TYPES.filter(t => fileState[g.id][t] === 'ok').length;
+      const bad = TYPES.filter(t => fileState[g.id][t] === 'bad').length;
+      el.textContent = bad ? ok + '/3 ⚠' : ok === 3 ? '3/3 ✓' : '检测中';
+      el.className = 'g-mini ' + (bad ? 'bad' : ok === 3 ? 'ok' : '');
+    });
+  }
+
+  function updateSummary() {
+    const ok  = TYPES.filter(t => fileState[activeGroup][t] === 'ok').length;
+    const bad = TYPES.filter(t => fileState[activeGroup][t] === 'bad').length;
+    const el = $('srcSummary');
+    if (bad)      { el.textContent = '⚠ ' + ok + '/3 就绪'; el.className = 'badge warn'; }
+    else if (ok === 3) { el.textContent = '✓ 3/3 就绪'; el.className = 'badge ok'; }
+    else          { el.textContent = '检测中…'; el.className = 'badge'; }
+  }
+
+  /* 加载兜底：4 秒后仍未确认的标记为未找到（后续 canplaythrough 会自动纠正） */
+  setTimeout(() => {
+    GROUPS.forEach(g => TYPES.forEach(type => {
+      if (fileState[g.id][type] !== 'loading') return;
+      const ok = AUDIO[g.id][type].readyState >= 2;
+      setFileState(g.id, type, ok ? 'ok' : 'bad',
+        ok ? (legacyUsed[g.id][type] ? '已就绪·旧文件' : '已就绪') : '未找到');
+    }));
+  }, 4000);
+
+  /* ========================================================
+   *  音源组 UI
+   * ====================================================== */
+  function renderGroupUI() {
+    const g = GROUP_MAP[activeGroup];
+    document.body.dataset.group = activeGroup;
+
+    $('brandTitle').textContent = '校园铃声播放系统 · ' + g.short;
+    $('brandSub').textContent   = 'Campus Bell System · ' + g.en;
+    $('srcDesc').textContent    = '当前音源：' + g.name + ' · ' + g.tag + ' ';
+    $('ovSchool').textContent   = g.short;
+
+    document.querySelectorAll('.group-btn, .ov-group-btn').forEach(btn => {
+      const on = btn.dataset.group === activeGroup;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+
+    TYPES.forEach(paintFileState);
+    updateMini();
+    updateSummary();
+  }
+
+  function switchGroup(gid) {
+    if (!GROUP_MAP[gid] || gid === activeGroup) return;
+    stopAll();
+    activeGroup = gid;
+    renderGroupUI();
+    saveSettings();
+
+    // 在用户点击手势内预热新组（静音试播），保证切换后立即可播
+    ensureGroupReady(gid);
+
+    setStatus('🔔 已切换：' + GROUP_MAP[gid].name + ' 铃声', 'ok');
+    setTimeout(() => { if (!currentPlay) setStatus('系统待机'); }, 2600);
+  }
+
+  /* ========================================================
+   *  播放结束 / 停止
+   * ====================================================== */
+  function onEnded() {
+    currentPlay = null;
+    currentAudio = null;
+    document.body.classList.remove('ringing', 'prepare-mode');
+    clearHighlight();
+    setStatus('系统待机');
+  }
+
+  function stopAll() {
+    GROUPS.forEach(g => TYPES.forEach(type => {
+      const a = AUDIO[g.id][type];
+      try { a.pause(); a.currentTime = 0; } catch (e) {}
+    }));
+    currentPlay = null;
+    currentAudio = null;
+    document.body.classList.remove('ringing', 'prepare-mode');
+    clearHighlight();
+  }
+
+  /* ========================================================
+   *  解锁
+   * ====================================================== */
+  function unlockGroup(gid) {
+    const tasks = TYPES.map(type => new Promise(resolve => {
+      const audio = AUDIO[gid][type];
+      const prevVol  = audio.volume;
+      const prevMute = audio.muted;
+
+      audio.muted  = true;
+      audio.volume = 0;
+
+      const finish = ok => {
+        try { audio.pause(); } catch (e) {}
+        try { audio.currentTime = 0; } catch (e) {}
+        audio.muted  = prevMute;
+        audio.volume = prevVol;
+        resolve(ok);
+      };
+
+      const p = audio.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => finish(true)).catch(() => finish(false));
+      } else {
+        setTimeout(() => finish(audio.readyState >= 2), 120);
+      }
+    }));
+    return Promise.all(tasks);
+  }
+
+  function ensureGroupReady(gid) {
+    if (groupReady.has(gid)) return Promise.resolve([true, true, true]);
+    groupReady.add(gid);
+    return unlockGroup(gid).then(results => {
+      if (results.every(x => !x)) groupReady.delete(gid);
+      return results;
+    });
+  }
+
+  function doUnlock() {
+    return unlockGroup(activeGroup).then(results => {
+      groupReady.add(activeGroup);
+      unlocked = true;
+      overlay.classList.add('hidden');
+      setTimeout(() => { overlay.style.display = 'none'; }, 400);
+
+      const g = GROUP_MAP[activeGroup];
+      const okCount = results.filter(Boolean).length;
+      if (okCount === TYPES.length) {
+        setStatus('✅ ' + g.short + ' · 三路铃声已就绪', 'ok');
+      } else if (okCount > 0) {
+        setStatus('⚠️ ' + g.short + ' · 部分铃声文件未找到，请检查 mp3', 'warn');
+      } else {
+        setStatus('⚠️ ' + g.short + ' · 未找到铃声文件，请检查 mp3', 'warn');
+      }
+      setTimeout(() => { if (!currentPlay) setStatus('系统待机'); }, 2200);
+      return results;
+    });
+  }
+
+  function ensureUnlocked() {
+    if (unlocked) return Promise.resolve();
+    if (!unlockTask) unlockTask = doUnlock();
+    return unlockTask;
+  }
+
+  overlay.addEventListener('click', ensureUnlocked);
+  overlay.addEventListener('touchstart', e => {
+    if (e.target.closest && e.target.closest('.ov-group-btn')) return;
+    e.preventDefault(); ensureUnlocked();
+  }, { passive: false });
+  window.addEventListener('pointerdown', e => {
+    if (!unlocked && !(e.target.closest && e.target.closest('.ov-group-btn'))) ensureUnlocked();
+  }, { passive: true });
+
+  /* ========================================================
+   *  播放
+   * ====================================================== */
+  async function play(type, item) {
+    if (!TYPE_INFO[type]) return;
+
+    stopAll();
+    await ensureUnlocked();
+    await ensureGroupReady(activeGroup);
+
+    const audio = AUDIO[activeGroup][type];
+    const info  = TYPE_INFO[type];
+    const g     = GROUP_MAP[activeGroup];
+
+    audio.volume = Math.max(0, Math.min(1, vol / 100));
+    try { audio.currentTime = 0; } catch (e) {}
+
+    try {
+      await audio.play();
+      currentPlay = type;
+      currentAudio = audio;
+
+      document.body.classList.add('ringing');
+      if (type === 'prepare') document.body.classList.add('prepare-mode');
+
+      setStatus(info.icon + ' ' + g.short + ' · 正在播放：' + info.name +
+                (item && item.label ? ' · ' + item.label : ''), type);
+
+      if (item) highlight(item.id);
+    } catch (err) {
+      console.warn('[铃声] 播放失败：', err);
+      const tip = (err && err.name === 'NotAllowedError')
+        ? '浏览器阻止了播放，请先点击页面'
+        : '播放失败，请检查 ' + activeFile(type) + ' 是否存在';
+      setStatus('⚠️ ' + tip, 'warn');
+    }
+  }
+
+  /* ========================================================
+   *  高亮
+   * ====================================================== */
+  function highlight(id) {
+    clearHighlight();
+    const el = listEl.querySelector('[data-id="' + id + '"]');
+    if (el) el.classList.add('active');
+  }
+  function clearHighlight() {
+    listEl.querySelectorAll('.item.active').forEach(el => el.classList.remove('active'));
+  }
+
+  /* ========================================================
+   *  数据持久化
+   * ====================================================== */
+  function normalize(item) {
+    return {
+      id: item.id || uid(),
+      time: String(item.time).slice(0, 5),
+      type: TYPE_INFO[item.type] ? item.type : 'up',
+      label: item.label || ''
+    };
+  }
+
+  function loadSchedule() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr.map(normalize);
+      }
+    } catch (e) {}
+    return DEFAULT_SCHEDULE.map(normalize);
+  }
+
+  function saveSchedule() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(schedule)); } catch (e) {}
+  }
+
+  function loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      if (typeof s.vol === 'number')   vol = Math.min(100, Math.max(0, s.vol));
+      if (typeof s.auto === 'boolean') autoEnabled = s.auto;
+      if (typeof s.group === 'string' && GROUP_MAP[s.group]) activeGroup = s.group;
+    } catch (e) {}
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ vol, auto: autoEnabled, group: activeGroup }));
+    } catch (e) {}
+  }
+
+  function loadAutoParams() {
+    try {
+      const s = JSON.parse(localStorage.getItem(AUTO_KEY) || '{}');
+      if (s.start)     autoStart.value   = s.start;
+      if (s.end)       autoEnd.value     = s.end;
+      if (s.lesson)    autoLesson.value  = s.lesson;
+      if (s.brk !== undefined) autoBreak.value = s.brk;
+      if (s.prepare !== undefined) autoPrepare.value = s.prepare;
+      if (s.tol !== undefined) autoTol.value = s.tol;
+    } catch (e) {}
+  }
+
+  function saveAutoParams() {
+    try {
+      localStorage.setItem(AUTO_KEY, JSON.stringify({
+        start:   autoStart.value,
+        end:     autoEnd.value,
+        lesson:  autoLesson.value,
+        brk:     autoBreak.value,
+        prepare: autoPrepare.value,
+        tol:     autoTol.value
+      }));
+    } catch (e) {}
+  }
+
+  /* ========================================================
+   *  渲染作息表
+   * ====================================================== */
+  function renderList() {
+    listEl.innerHTML = '';
+    $('listCount').textContent = schedule.length + ' 条';
+
+    if (!schedule.length) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = '暂无铃声安排，请在上方添加';
+      listEl.appendChild(li);
+      return;
+    }
+
+    const sorted = schedule.slice().sort((a, b) => a.time.localeCompare(b.time));
+
+    sorted.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'item';
+      li.dataset.id = item.id;
+      li.dataset.time = item.time;
+      li.dataset.type = item.type;
+
+      const info = TYPE_INFO[item.type];
+      li.innerHTML =
+        '<span class="time">' + item.time + '</span>' +
+        '<span class="tag ' + item.type + '">' + info.name + '</span>' +
+        '<span class="label">' + escapeHtml(item.label) + '</span>' +
+        '<button class="del" title="删除" aria-label="删除">✕</button>';
+
+      li.querySelector('.del').addEventListener('click', () => {
+        schedule = schedule.filter(s => s.id !== item.id);
+        saveSchedule();
+        renderList();
+      });
+
+      listEl.appendChild(li);
+    });
+
+    markPast();
+  }
+
+  function markPast() {
+    const cur = nowHHMM();
+    listEl.querySelectorAll('.item').forEach(li => {
+      li.classList.toggle('past', li.dataset.time < cur);
+    });
+  }
+
+  /* ========================================================
+   *  自动响铃
+   * ====================================================== */
+  function checkSchedule() {
+    const now = new Date();
+    const dayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate();
+
+    if (dayKey !== lastDayKey) {
+      lastDayKey = dayKey;
+      firedKeys.clear();
+    }
+
+    if (!autoEnabled || !unlocked) return;
+
+    const hhmm = pad(now.getHours()) + ':' + pad(now.getMinutes());
+
+    schedule.forEach(item => {
+      if (item.time !== hhmm) return;
+
+      const key = dayKey + '|' + item.id + '|' + hhmm;
+      if (firedKeys.has(key)) return;
+      firedKeys.add(key);
+
+      play(item.type, item);
+    });
+  }
+
+  /* ========================================================
+   *  下一条提示
+   * ====================================================== */
+  function updateNext() {
+    const cur = nowHHMM();
+    const next = schedule
+      .filter(s => s.time > cur)
+      .sort((a, b) => a.time.localeCompare(b.time))[0];
+
+    if (next) {
+      const info = TYPE_INFO[next.type];
+      nextEl.textContent = '下一条 ' + next.time + ' · ' + info.name +
+        (next.label ? ' · ' + next.label : '');
+    } else {
+      nextEl.textContent = schedule.length ? '今日铃声已全部结束' : '尚未设置作息时间';
+    }
+  }
+
+  /* ========================================================
+   *  主循环
+   * ====================================================== */
+  function tick() {
+    const now = new Date();
+
+    if (now.getSeconds() !== lastSecond) {
+      lastSecond = now.getSeconds();
+
+      clockEl.textContent =
+        pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+
+      dateEl.textContent =
+        now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 ' +
+        WEEK[now.getDay()];
+
+      markPast();
+      updateNext();
+    }
+
+    checkSchedule();
+  }
+
+  /* ========================================================
+   *  全天候排课：核心算法
+   * ====================================================== */
+  function buildAutoSchedule() {
+    const startMin = toMinutes(autoStart.value);
+    const endMin   = toMinutes(autoEnd.value);
+
+    if (startMin === null || endMin === null) {
+      return { error: '请填写有效的开始 / 结束时间' };
+    }
+    if (endMin <= startMin) {
+      return { error: '结束时间必须晚于开始时间' };
+    }
+
+    const lesson  = Math.max(1, Number(autoLesson.value) || 45);
+    const brk     = Math.max(0, Number(autoBreak.value) || 0);
+    const prep    = Math.max(0, Number(autoPrepare.value) || 0);
+    const tol     = Math.max(0, Number(autoTol.value) || 0);
+
+    // 第一节课开始时间不能早于 00:00，且预备铃不能跨天
+    if (prep > 0 && startMin - prep < 0) {
+      return { error: '开始时间太早，预备铃会跨到前一天' };
+    }
+
+    const list = [];
+    let t = startMin;
+    let n = 0;
+    let lastEnd = 0;
+
+    while (true) {
+      const lessonEnd = t + lesson;
+
+      // 允许最后一节延后 tol 分钟，但不能超过 24:00
+      if (lessonEnd > endMin + tol) break;
+      if (lessonEnd > 1440) break;
+
+      n++;
+
+      if (prep > 0) {
+        list.push({
+          time: toHHMM(t - prep),
+          type: 'prepare',
+          label: '第' + n + '节预备'
+        });
+      }
+      list.push({ time: toHHMM(t),          type: 'up',   label: '第' + n + '节' });
+      list.push({ time: toHHMM(lessonEnd),  type: 'down', label: '第' + n + '节下课' });
+
+      lastEnd = lessonEnd;
+      t = lessonEnd + brk;
+
+      // 安全阀，避免死循环
+      if (n > 50) break;
+    }
+
+    if (!list.length) {
+      return { error: '按当前时长无法排出任何课程，请检查参数' };
+    }
+
+    return { list, count: n, lastEnd };
+  }
+
+  function updateAutoPreview() {
+    const r = buildAutoSchedule();
+
+    if (r.error) {
+      autoPreview.textContent = '⚠️ ' + r.error;
+      autoPreview.classList.add('error');
+      return r;
+    }
+
+    autoPreview.classList.remove('error');
+    autoPreview.textContent =
+      '📊 预计排 ' + r.count + ' 节课，共 ' + r.list.length + ' 条铃声 · ' +
+      '首节 ' + r.list[0].time + ' 开始，末节 ' + toHHMM(r.lastEnd) + ' 结束';
+    return r;
+  }
+
+  /* ---------- 追加生成 ---------- */
+  function generateAppend() {
+    const r = updateAutoPreview();
+    if (r.error) {
+      setStatus('⚠️ ' + r.error, 'warn');
+      return;
+    }
+
+    let added = 0, skipped = 0;
+    r.list.forEach(item => {
+      // 跳过同时间同类型的重复项
+      const exists = schedule.some(s => s.time === item.time && s.type === item.type);
+      if (exists) { skipped++; return; }
+
+      schedule.push({ id: uid(), ...item });
+      added++;
+    });
+
+    saveSchedule();
+    renderList();
+    saveAutoParams();
+
+    if (added) {
+      setStatus('✅ 已追加 ' + added + ' 条铃声' +
+                (skipped ? '（跳过重复 ' + skipped + ' 条）' : ''), 'ok');
+    } else {
+      setStatus('⚠️ 没有新增铃声，全部已存在', 'warn');
+    }
+    setTimeout(() => { if (!currentPlay) setStatus('系统待机'); }, 2600);
+  }
+
+  /* ---------- 清空后生成 ---------- */
+  function generateReplace() {
+    const r = updateAutoPreview();
+    if (r.error) {
+      setStatus('⚠️ ' + r.error, 'warn');
+      return;
+    }
+
+    if (!confirm('将清空当前作息表（' + schedule.length + ' 条），并生成新的 ' + r.list.length + ' 条铃声。\n\n确定继续吗？')) {
+      return;
+    }
+
+    schedule = r.list.map(item => ({ id: uid(), ...item }));
+    saveSchedule();
+    renderList();
+    saveAutoParams();
+
+    setStatus('✅ 已重新生成 ' + r.list.length + ' 条铃声', 'ok');
+    setTimeout(() => { if (!currentPlay) setStatus('系统待机'); }, 2600);
+  }
+
+  /* ========================================================
+   *  事件绑定
+   * ====================================================== */
+  $('btnUp').addEventListener('click', async () => {
+    await ensureUnlocked();
+    play('up');
+  });
+  $('btnDown').addEventListener('click', async () => {
+    await ensureUnlocked();
+    play('down');
+  });
+  $('btnPrepare').addEventListener('click', async () => {
+    await ensureUnlocked();
+    play('prepare');
+  });
+
+  $('btnStop').addEventListener('click', () => {
+    stopAll();
+    setStatus('已停止播放');
+    setTimeout(() => { if (!currentPlay) setStatus('系统待机'); }, 1800);
+  });
+
+  volEl.addEventListener('input', () => {
+    vol = Number(volEl.value);
+    volValEl.textContent = vol + '%';
+    GROUPS.forEach(g => TYPES.forEach(t => {
+      AUDIO[g.id][t].volume = Math.min(1, vol / 100);
+    }));
+    saveSettings();
+  });
+
+  autoEl.addEventListener('change', () => {
+    autoEnabled = autoEl.checked;
+    saveSettings();
+    setStatus(autoEnabled ? '自动播放已开启' : '自动播放已关闭', autoEnabled ? '' : 'warn');
+  });
+
+  /* ---------- 双校音源切换 ---------- */
+  document.querySelectorAll('.group-btn, .ov-group-btn').forEach(btn => {
+    btn.addEventListener('pointerdown', e => e.stopPropagation());
+    btn.addEventListener('touchstart',  e => e.stopPropagation(), { passive: true });
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      switchGroup(btn.dataset.group);
+    });
+  });
+
+  $('btnAdd').addEventListener('click', () => {
+    const t = newTimeEl.value.slice(0, 5);
+    if (!t) {
+      setStatus('请先选择时间', 'warn');
+      newTimeEl.focus();
+      return;
+    }
+
+    const type = TYPE_INFO[newTypeEl.value] ? newTypeEl.value : 'up';
+
+    schedule.push({
+      id: uid(),
+      time: t,
+      type: type,
+      label: newLabelEl.value.trim()
+    });
+
+    saveSchedule();
+    renderList();
+
+    newLabelEl.value = '';
+    newTimeEl.value = '';
+    setStatus('已添加：' + t + ' ' + TYPE_INFO[type].name);
+    setTimeout(() => { if (!currentPlay) setStatus('系统待机'); }, 2000);
+  });
+
+  [newTimeEl, newLabelEl].forEach(el => {
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') $('btnAdd').click();
+    });
+  });
+
+  /* ---------- 排课面板开关 ---------- */
+  $('btnOpenAuto').addEventListener('click', () => {
+    autoPanel.hidden = false;
+    updateAutoPreview();
+    autoPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  $('btnCloseAuto').addEventListener('click', () => {
+    autoPanel.hidden = true;
+  });
+
+  /* ---------- 参数变化实时预览 ---------- */
+  [autoStart, autoEnd, autoLesson, autoBreak, autoPrepare, autoTol].forEach(el => {
+    el.addEventListener('input', () => {
+      updateAutoPreview();
+      saveAutoParams();
+    });
+  });
+
+  /* ---------- 生成按钮 ---------- */
+  $('btnGenAuto').addEventListener('click', generateAppend);
+  $('btnReplaceAuto').addEventListener('click', generateReplace);
+
+  /* ---------- 补全预备铃 ---------- */
+  $('btnGenPrepare').addEventListener('click', () => {
+    const ups = schedule.filter(s => s.type === 'up');
+
+    if (!ups.length) {
+      setStatus('还没有上课铃，无法补全预备铃', 'warn');
+      return;
+    }
+
+    const existing = new Set(
+      schedule.filter(s => s.type === 'prepare').map(s => s.time)
+    );
+
+    let added = 0;
+    ups.forEach(u => {
+      const pt = minusMinutes(u.time, 2);
+      if (existing.has(pt)) return;
+
+      schedule.push({
+        id: uid(),
+        time: pt,
+        type: 'prepare',
+        label: u.label ? u.label + '预备' : '预备铃'
+      });
+      existing.add(pt);
+      added++;
+    });
+
+    if (added) {
+      saveSchedule();
+      renderList();
+      setStatus('✅ 已补全 ' + added + ' 条预备铃（提前 2 分钟）', 'ok');
+    } else {
+      setStatus('预备铃已齐全，无需补全', 'warn');
+    }
+
+    setTimeout(() => { if (!currentPlay) setStatus('系统待机'); }, 2400);
+  });
+
+  $('btnReset').addEventListener('click', () => {
+    if (!confirm('确定恢复默认作息时间表吗？当前自定义内容将被覆盖。')) return;
+    schedule = DEFAULT_SCHEDULE.map(s => normalize({ ...s, id: uid() }));
+    saveSchedule();
+    renderList();
+    setStatus('已恢复默认作息表');
+    setTimeout(() => { if (!currentPlay) setStatus('系统待机'); }, 2000);
+  });
+
+  $('btnClear').addEventListener('click', () => {
+    if (!confirm('确定清空全部铃声安排吗？')) return;
+    schedule = [];
+    saveSchedule();
+    renderList();
+    setStatus('作息表已清空', 'warn');
+  });
+
+  /* ---------- 键盘快捷键 ---------- */
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    const k = e.key.toLowerCase();
+    if (k === '1') switchGroup('fy');
+    else if (k === '2') switchGroup('ny');
+    else if (k === 'u') play('up');
+    else if (k === 'd') play('down');
+    else if (k === 'p') play('prepare');
+    else if (k === 's') $('btnStop').click();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) tick();
+  });
+
+  /* ========================================================
+   *  启动
+   * ====================================================== */
+  function init() {
+    loadSettings();
+    loadAutoParams();
+    schedule = loadSchedule();
+
+    volEl.value = vol;
+    volValEl.textContent = vol + '%';
+    autoEl.checked = autoEnabled;
+
+    GROUPS.forEach(g => TYPES.forEach(t => {
+      AUDIO[g.id][t].volume = Math.min(1, vol / 100);
+    }));
+
+    renderGroupUI();
+    renderList();
+    tick();
+    setInterval(tick, 200);
+
+    setStatus('点击页面开启声音', 'warn');
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
